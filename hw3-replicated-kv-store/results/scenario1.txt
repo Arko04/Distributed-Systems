@@ -1,0 +1,63 @@
+================================================================================
+SCENARIO 1: TEMPORARY INCONSISTENCY OBSERVATION
+================================================================================
+
+Date: _______________
+Tester: _______________
+Consistency Model: Eventual
+Network Delay: _______________ ms
+
+--------------------------------------------------------------------------------
+OBJECTIVE
+--------------------------------------------------------------------------------
+To demonstrate that in eventual consistency mode, a read immediately after 
+a write to a different replica may return stale or missing data.
+
+--------------------------------------------------------------------------------
+STEPS
+--------------------------------------------------------------------------------
+1. Ensure all three replicas are running and healthy
+2. Write x=10 to Replica 1
+3. Immediately (within 100ms) read x from Replica 2
+4. Wait 3 seconds for replication to complete
+5. Read x from Replica 2 again
+6. Check all replicas with getall
+
+--------------------------------------------------------------------------------
+RESULTS
+--------------------------------------------------------------------------------
+
+Step 2 - PUT to Replica 1:
+  Response Time: _______ ms
+  Success: _______
+  Version: _______
+
+Step 3 - Immediate GET from Replica 2:
+  Response Time: _______ ms
+  Value Returned: _______
+  Found: _______
+
+Step 5 - GET from Replica 2 after waiting:
+  Response Time: _______ ms
+  Value Returned: _______
+  Version: _______
+
+Step 6 - GETALL results:
+  Replica 1: value=_______, version=_______
+  Replica 2: value=_______, version=_______
+  Replica 3: value=_______, version=_______
+
+Convergence Time: _______ ms
+Stale Reads Observed: _______
+
+--------------------------------------------------------------------------------
+ANALYSIS
+--------------------------------------------------------------------------------
+[Explain why Replica 2 returned stale/missing data in Step 3]
+[Explain why all replicas had the same value in Step 6]
+[Discuss the implications of this behavior for different types of applications]
+
+--------------------------------------------------------------------------------
+CONCLUSION
+--------------------------------------------------------------------------------
+[Summarize what this scenario demonstrates about eventual consistency]

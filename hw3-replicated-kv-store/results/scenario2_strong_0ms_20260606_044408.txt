@@ -1,0 +1,65 @@
+================================================================================
+SCENARIO 2: REPLICA FAILURE BEHAVIOR
+================================================================================
+Date: Sat Jun  6 04:45:29 +0330 2026
+Consistency Model: strong
+Network Delay: 0ms
+
+--------------------------------------------------------------------------------
+STEPS
+--------------------------------------------------------------------------------
+
+--- Step 1: Stopping Replica 3 ---
+Stop result: {"message":"Replica replica3 has been stopped","status":"stopped"}
+Replica 3 health: {"delay":0,"id":"replica3","model":"strong","peers":["http://localhost:8001","http://localhost:8002"],"status":"stopped"}
+
+--- Step 2: PUT y=20 to Replica 1 ---
+PUT Latency: 37ms
+Response: {"success":true,"message":"Value stored successfully","version":1,"updated_by":"replica1"}
+WRITE STATUS: SUCCESS (system prioritized availability)
+
+--- Step 3: Checking remaining replicas ---
+
+Replica 1 (should have value):
+{
+    "key": "y",
+    "value": "20",
+    "version": 1,
+    "updated_by": "replica1",
+    "timestamp": 1780708530469182000,
+    "found": true
+}
+
+Replica 2 (should have value if replicated):
+{
+    "key": "y",
+    "value": "20",
+    "version": 1,
+    "updated_by": "replica1",
+    "timestamp": 1780708530469182000,
+    "found": true
+}
+
+--- Step 4: Restarting Replica 3 ---
+Start result: {"message":"Replica replica3 has been started","status":"started"}
+
+--- Step 5: Checking Replica 3 after restart ---
+Replica 3: {"key":"y","value":"","version":0,"updated_by":"","timestamp":0,"found":false}
+REPLICA 3: MISSING the value (missed update while down)
+
+--------------------------------------------------------------------------------
+ANALYSIS
+--------------------------------------------------------------------------------
+Strong Consistency Behavior:
+- Write required majority acknowledgment
+- Write succeeded because 2/3 replicas (majority) were available
+- System prioritized consistency over availability (CP from CAP)
+
+--------------------------------------------------------------------------------
+METRICS SUMMARY
+--------------------------------------------------------------------------------
+Replicas Available: 2 of 3
+PUT Success: true
+PUT Latency: 37ms
+Replica 3 Data After Restart: Missing
+

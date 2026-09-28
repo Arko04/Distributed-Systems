@@ -1,0 +1,71 @@
+================================================================================
+COMPREHENSIVE TEST SUMMARY
+================================================================================
+Date: Sat Jun  6 04:46:19 +0330 2026
+Timestamp: 20260606_044408
+
+--------------------------------------------------------------------------------
+TEST CONFIGURATIONS
+--------------------------------------------------------------------------------
+
+Configuration 1: Eventual Consistency, 0ms delay
+Configuration 2: Eventual Consistency, 500ms delay
+Configuration 3: Eventual Consistency, 2000ms delay
+Configuration 4: Strong Consistency, 0ms delay
+Configuration 5: Strong Consistency, 500ms delay
+Configuration 6: Strong Consistency, 2000ms delay
+
+--------------------------------------------------------------------------------
+RESULTS SUMMARY TABLE
+--------------------------------------------------------------------------------
+
+| Model           | Delay    | PUT Latency  | Convergence Time  | Stale Reads  |
+| --------------- | -------- | ------------ | ----------------- | ------------ |
+| eventual        | 0ms      | 31ms         | 500ms             | 0            |
+| eventual        | 500ms    | 30ms         | 500ms             | 1            |
+| eventual        | 2000ms   | 54ms         | 1500ms            | 3            |
+| strong          | 0ms      | 31ms         | 500ms             | 0            |
+| strong          | 500ms    | 556ms        | 500ms             | 0            |
+| strong          | 2000ms   | 2059ms       | 500ms             | 0            |
+
+--------------------------------------------------------------------------------
+KEY FINDINGS
+--------------------------------------------------------------------------------
+
+1. CONSISTENCY vs AVAILABILITY TRADE-OFF:
+   - Eventual consistency provides fast writes but allows stale reads
+   - Strong consistency prevents stale reads but increases write latency
+
+2. NETWORK DELAY IMPACT:
+   - Higher network delays increase convergence time in eventual consistency
+   - Higher network delays increase PUT latency in strong consistency
+   - Stale read probability increases with network delay
+
+3. FAILURE HANDLING:
+   - Eventual consistency continues accepting writes during partial failures
+   - Strong consistency may reject writes if majority is unavailable
+   - Failed replicas miss updates and need catch-up mechanisms
+
+4. CONFLICT RESOLUTION:
+   - Last-Write-Wins (LWW) provides deterministic conflict resolution
+   - Concurrent updates are resolved automatically based on timestamps
+   - LWW can silently discard data (the losing write)
+
+--------------------------------------------------------------------------------
+CONCLUSION
+--------------------------------------------------------------------------------
+
+This exercise demonstrated the fundamental trade-offs in distributed systems:
+
+- There is no 'one size fits all' consistency model
+- The choice depends on application requirements:
+  * Social media: Eventual consistency (can tolerate temporary staleness)
+  * Banking: Strong consistency (cannot tolerate inconsistencies)
+  * Gaming: Low latency (may accept eventual consistency for performance)
+
+- The CAP theorem forces a choice between consistency and availability
+  during network partitions
+
+- Real-world systems often use tunable consistency (per-operation choice)
+
+================================================================================

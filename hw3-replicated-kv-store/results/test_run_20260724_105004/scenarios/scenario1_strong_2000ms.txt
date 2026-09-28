@@ -1,0 +1,135 @@
+================================================================================
+SCENARIO 1: TEMPORARY INCONSISTENCY OBSERVATION
+================================================================================
+
+CONFIGURATION:
+  Date:               Fri Jul 24 10:52:20 +0330 2026
+  Consistency Model:  strong
+  Network Delay:      2000ms
+  Test Run ID:        20260724_105004
+
+--------------------------------------------------------------------------------
+OBJECTIVE
+--------------------------------------------------------------------------------
+Demonstrate that with eventual consistency, a read immediately after
+a write to a different replica may return stale or missing data.
+
+--------------------------------------------------------------------------------
+TEST EXECUTION
+--------------------------------------------------------------------------------
+
+=== STEP 1: PUT x=10 to Replica 1 ===
+PUT Latency: 2055ms
+HTTP Status: SUCCESS
+Response:
+{
+    "success": true,
+    "message": "Value stored successfully",
+    "version": 1,
+    "updated_by": "replica1"
+}
+[0;32m   📊  PUT Latency                    [1m2055ms[0m
+
+=== STEP 2: Immediate GET from Replica 2 ===
+GET Latency: 40ms
+Found: True
+Value: 10
+Response:
+{
+    "key": "x",
+    "value": "10",
+    "version": 1,
+    "updated_by": "replica1",
+    "timestamp": 1784877740902729000,
+    "found": true
+}
+STALE READ: NO (value already propagated)
+[0;32m   📊  GET Latency                    [1m40ms[0m
+[0;32m   📊  Stale Read Detected            [1mNo[0m
+
+=== STEP 3: Waiting for Convergence ===
+Convergence Status: TIMEOUT
+Elapsed Time: [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+0s
+Total Checks: [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+1
+[0;32m   📊  Convergence Time               [1m[1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+0s[0m
+[0;32m   📊  Checks During Convergence      [1m[1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+1[0m
+[0;32m   📊  Stale Reads                    [1m[1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+0[0m
+
+=== STEP 4: Final State Across All Replicas ===
+
+--- Replica 1 (http://localhost:8001) ---
+{
+    "key": "x",
+    "value": "10",
+    "version": 1,
+    "updated_by": "replica1",
+    "timestamp": 1784877740902729000,
+    "found": true
+}
+
+--- Replica 2 (http://localhost:8002) ---
+{
+    "key": "x",
+    "value": "10",
+    "version": 1,
+    "updated_by": "replica1",
+    "timestamp": 1784877740902729000,
+    "found": true
+}
+
+--- Replica 3 (http://localhost:8003) ---
+{
+    "key": "x",
+    "value": "10",
+    "version": 1,
+    "updated_by": "replica1",
+    "timestamp": 1784877740902729000,
+    "found": true
+}
+
+
+--------------------------------------------------------------------------------
+ANALYSIS
+--------------------------------------------------------------------------------
+STRONG CONSISTENCY BEHAVIOR:
+
+1. Write Performance:
+   - PUT completed in 2055ms (waited for majority acknowledgment)
+
+2. Consistency Guarantee:
+   - No stale reads possible after successful write
+   - All replicas in majority have the latest value
+
+3. CAP Theorem:
+   - This is a CP system (Consistent + Partition Tolerant)
+   - Sacrifices availability for consistency during partitions
+
+--------------------------------------------------------------------------------
+METRICS SUMMARY
+--------------------------------------------------------------------------------
+
+  PUT Latency:                        2055ms
+  GET Latency:                        40ms
+  Convergence Time:                   [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+0s
+  Stale Read on First GET:            No
+  Total Stale Reads:                  [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+0
+  Convergence Checks:                 [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+1
+  Consistency Model:                  strong
+  Network Delay:                      2000ms
+

@@ -1,0 +1,143 @@
+================================================================================
+SCENARIO 1: TEMPORARY INCONSISTENCY OBSERVATION
+================================================================================
+
+CONFIGURATION:
+  Date:               Sat Jun  6 14:17:11 +0330 2026
+  Consistency Model:  eventual
+  Network Delay:      2000ms
+  Test Run ID:        20260606_141612
+
+--------------------------------------------------------------------------------
+OBJECTIVE
+--------------------------------------------------------------------------------
+Demonstrate that with eventual consistency, a read immediately after
+a write to a different replica may return stale or missing data.
+
+--------------------------------------------------------------------------------
+TEST EXECUTION
+--------------------------------------------------------------------------------
+
+=== STEP 1: PUT x=10 to Replica 1 ===
+PUT Latency: 37ms
+HTTP Status: SUCCESS
+Response:
+{
+    "success": true,
+    "message": "Value stored successfully",
+    "version": 1,
+    "updated_by": "replica1"
+}
+[0;32m   📊  PUT Latency                    [1m37ms[0m
+
+=== STEP 2: Immediate GET from Replica 2 ===
+GET Latency: 39ms
+Found: False
+Value: <empty>
+Response:
+{
+    "key": "x",
+    "value": "",
+    "version": 0,
+    "updated_by": "",
+    "timestamp": 0,
+    "found": false
+}
+STALE READ: YES (value not yet propagated to Replica 2)
+[0;32m   📊  GET Latency                    [1m39ms[0m
+[0;32m   📊  Stale Read Detected            [1mYes[0m
+
+=== STEP 3: Waiting for Convergence ===
+Convergence Status: TIMEOUT
+Elapsed Time: [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+1.00s
+Total Checks: [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+5
+[0;32m   📊  Convergence Time               [1m[1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+1.00s[0m
+[0;32m   📊  Checks During Convergence      [1m[1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+5[0m
+[0;32m   📊  Stale Reads                    [1m[1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+4[0m
+
+=== STEP 4: Final State Across All Replicas ===
+
+--- Replica 1 (http://localhost:8001) ---
+{
+    "key": "x",
+    "value": "10",
+    "version": 1,
+    "updated_by": "replica1",
+    "timestamp": 1780742831653795000,
+    "found": true
+}
+
+--- Replica 2 (http://localhost:8002) ---
+{
+    "key": "x",
+    "value": "10",
+    "version": 1,
+    "updated_by": "replica1",
+    "timestamp": 1780742831653795000,
+    "found": true
+}
+
+--- Replica 3 (http://localhost:8003) ---
+{
+    "key": "x",
+    "value": "10",
+    "version": 1,
+    "updated_by": "replica1",
+    "timestamp": 1780742831653795000,
+    "found": true
+}
+
+
+--------------------------------------------------------------------------------
+ANALYSIS
+--------------------------------------------------------------------------------
+EVENTUAL CONSISTENCY BEHAVIOR:
+
+1. Write Performance:
+   - PUT completed in 37ms (fast, no waiting for peers)
+
+2. Consistency Window:
+   - Stale read DETECTED on Replica 2 immediately after write
+   - This demonstrates the consistency gap in eventual consistency
+
+3. Convergence:
+   - System converged in [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+1.00s
+   - [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+4 stale reads during the convergence window
+
+4. CAP Theorem:
+   - This is an AP system (Available + Partition Tolerant)
+   - Sacrifices consistency for availability and low latency
+
+--------------------------------------------------------------------------------
+METRICS SUMMARY
+--------------------------------------------------------------------------------
+
+  PUT Latency:                        37ms
+  GET Latency:                        39ms
+  Convergence Time:                   [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+1.00s
+  Stale Read on First GET:            Yes
+  Total Stale Reads:                  [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+4
+  Convergence Checks:                 [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+5
+  Consistency Model:                  eventual
+  Network Delay:                      2000ms
+

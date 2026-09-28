@@ -1,0 +1,43 @@
+================================================================================
+SCENARIO 4: NETWORK DELAY IMPACT
+================================================================================
+Date: Sat Jun  6 04:44:51 +0330 2026
+Consistency Model: eventual
+Network Delay: 500ms
+
+--------------------------------------------------------------------------------
+TEST EXECUTION
+--------------------------------------------------------------------------------
+
+--- Writing w=500 to Replica 1 ---
+PUT Latency: 30ms
+Response: {"success":true,"message":"Value stored successfully","version":1,"updated_by":"replica1"}
+
+--- Monitoring convergence ---
+t=0ms: R1=500, R2=, R3=
+t=500ms: R1=500, R2=500, R3=500
+
+--- Final State ---
+Replica 1: {"key":"w","value":"500","version":1,"updated_by":"replica1","timestamp":1780708491537718000,"found":true}
+Replica 2: {"key":"w","value":"500","version":1,"updated_by":"replica1","timestamp":1780708491537718000,"found":true}
+Replica 3: {"key":"w","value":"500","version":1,"updated_by":"replica1","timestamp":1780708491537718000,"found":true}
+
+--------------------------------------------------------------------------------
+METRICS SUMMARY
+--------------------------------------------------------------------------------
+PUT Latency: 30ms
+Convergence Time: 500ms
+Total Checks: 2
+Stale Reads Observed: 1
+Model: eventual
+Configured Delay: 500ms
+
+--------------------------------------------------------------------------------
+ANALYSIS
+--------------------------------------------------------------------------------
+Eventual Consistency with 500ms delay:
+- PUT returns immediately (fast write, ~30ms)
+- Convergence takes approximately 500ms
+- 1 stale reads observed during convergence
+- Higher delay = longer convergence window = more stale reads
+

@@ -1,0 +1,9 @@
+[WORKER] 2026/04/22 08:20:40 starting worker...
+[WORKER] 2026/04/22 08:20:41 worker is listening for requests...
+[WORKER] 2026/04/22 08:20:41 received request line: "ADD 5 7"
+[WORKER] 2026/04/22 08:20:41 received request line: "SUB 10 3"
+[WORKER] 2026/04/22 08:20:41 received request line: "MUL 4 2.5"
+[WORKER] 2026/04/22 08:20:41 received request line: "DIV 9 2"
+[WORKER] 2026/04/22 08:20:41 received request line: "MOD 10 3"
+[WORKER] 2026/04/22 08:20:41 request pipe closed, exiting worker.
+[WORKER] 2026/04/22 08:20:41 worker stopped.

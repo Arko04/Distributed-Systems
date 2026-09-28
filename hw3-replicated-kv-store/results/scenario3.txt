@@ -1,0 +1,68 @@
+================================================================================
+SCENARIO 3: CONCURRENT CONFLICT RESOLUTION
+================================================================================
+
+Date: _______________
+Tester: _______________
+Consistency Model: Eventual
+Conflict Resolution: Last-Write-Wins (LWW)
+
+--------------------------------------------------------------------------------
+OBJECTIVE
+--------------------------------------------------------------------------------
+To demonstrate how the system resolves conflicts when two replicas receive
+different values for the same key simultaneously.
+
+--------------------------------------------------------------------------------
+STEPS
+--------------------------------------------------------------------------------
+1. Ensure all replicas are running
+2. Write z=100 to Replica 1
+3. Immediately (before replication) write z=200 to Replica 2
+4. Wait for replication and conflict resolution
+5. Check all replicas with getall
+
+--------------------------------------------------------------------------------
+RESULTS
+--------------------------------------------------------------------------------
+
+Replica 1 PUT (z=100):
+  Timestamp: _______
+  Version: _______
+
+Replica 2 PUT (z=200):
+  Timestamp: _______
+  Version: _______
+
+After convergence:
+  Replica 1: value=_______, version=_______
+  Replica 2: value=_______, version=_______
+  Replica 3: value=_______, version=_______
+
+Winning value: _______
+Winning reason (timestamp/replica ID): _______
+
+Conflict detected in logs? _______
+
+--------------------------------------------------------------------------------
+ANALYSIS
+--------------------------------------------------------------------------------
+[Explain which value won and why]
+[Discuss whether LWW is the right strategy for this use case]
+[What would happen with a different conflict resolution strategy?]
+
+--------------------------------------------------------------------------------
+ALTERNATIVE STRATEGIES CONSIDERATION
+--------------------------------------------------------------------------------
+If we used "Keep Both Values" strategy:
+  - What would the system look like?
+  - How would clients resolve the conflict?
+
+If we used "Replica Priority" strategy (higher ID wins):
+  - Which value would win? (Replica 2 has higher ID)
+  - Is this better or worse than LWW?
+
+--------------------------------------------------------------------------------
+CONCLUSION
+--------------------------------------------------------------------------------
+[Summarize what this scenario teaches about conflicts in distributed systems]

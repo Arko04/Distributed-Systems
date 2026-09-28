@@ -1,0 +1,63 @@
+
+[0;34m========================================[0m
+[0;34mPart 3: Containerized Service Test[0m
+[0;34m========================================[0m
+
+[0;34m========================================[0m
+[0;34mChecking Docker[0m
+[0;34m========================================[0m
+[0;32m✓ Docker is running[0m
+
+[0;34m========================================[0m
+[0;34mCleaning up previous container[0m
+[0;34m========================================[0m
+[0;32m✓ Cleaned up[0m
+
+[0;34m========================================[0m
+[0;34mBuilding Docker image[0m
+[0;34m========================================[0m
+[0;32m✓ Image built successfully[0m
+
+[0;34m========================================[0m
+[0;34mStarting container[0m
+[0;34m========================================[0m
+b53c965e17049cd4f3500f1bfe6d81503548d0aeb7b6bd3afd01566809b3b9bc
+[0;32m✓ Container started[0m
+
+[0;34m========================================[0m
+[0;34mWaiting for service[0m
+[0;34m========================================[0m
+[0;32m✓ Service ready (attempt 1)[0m
+
+[0;34m========================================[0m
+[0;34mRunning API Tests[0m
+[0;34m========================================[0m
+  Testing Health endpoint... [0;32m✓ Health endpoint (HTTP 200)[0m
+       Response: {"status":"ok"}
+  Testing Addition... [0;32m✓ Addition (HTTP 200)[0m
+       Response: {"operation":"add","a":8,"b":3,"result":11}
+  Testing Subtraction... [0;32m✓ Subtraction (HTTP 200)[0m
+       Response: {"operation":"sub","a":10,"b":4,"result":6}
+  Testing Multiplication... [0;32m✓ Multiplication (HTTP 200)[0m
+       Response: {"operation":"mul","a":6,"b":7,"result":42}
+  Testing Division... [0;32m✓ Division (HTTP 200)[0m
+       Response: {"operation":"div","a":20,"b":4,"result":5}
+  Testing Division by zero... [0;32m✓ Division by zero (HTTP 400)[0m
+       Response: {"operation":"div","a":10,"b":0,"error":"division by zero"}
+  Testing Invalid operation (mod)... [0;32m✓ Invalid operation (mod) (HTTP 400)[0m
+       Response: {"operation":"mod","a":5,"b":2,"error":"unsupported operation"}
+  Testing Missing parameters... [0;32m✓ Missing parameters (HTTP 400)[0m
+       Response: Missing parameters
+  Testing Non-numeric a... [0;32m✓ Non-numeric a (HTTP 400)[0m
+       Response: Invalid numbers
+[1;33m→ Testing wrong HTTP method (POST)...[0m
+[0;32m✓ POST correctly returned 405[0m
+
+[0;32m✓ All tests passed! 🎉[0m
+
+[0;34m========================================[0m
+[0;34mContainer logs (last 10 lines)[0m
+[0;34m========================================[0m
+
+
+[1;33m→ Container left running. Later: docker stop compute-container && docker rm compute-container[0m

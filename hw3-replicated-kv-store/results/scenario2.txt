@@ -1,0 +1,92 @@
+================================================================================
+SCENARIO 2: REPLICA FAILURE BEHAVIOR
+================================================================================
+
+Date: _______________
+Tester: _______________
+
+================================================================================
+PART A: EVENTUAL CONSISTENCY
+================================================================================
+
+Consistency Model: Eventual
+
+--------------------------------------------------------------------------------
+STEPS
+--------------------------------------------------------------------------------
+1. All replicas running
+2. Stop Replica 3
+3. Write y=20 to Replica 1
+4. Read y from Replica 2
+5. Restart Replica 3
+6. Read y from Replica 3
+
+--------------------------------------------------------------------------------
+RESULTS
+--------------------------------------------------------------------------------
+
+PUT Result:
+  Success: _______
+  Response Time: _______ ms
+
+GET from Replica 2:
+  Value: _______
+  Found: _______
+
+GET from Replica 3 (after restart):
+  Value: _______
+  Found: _______
+
+Did Replica 3 receive the update it missed? _______
+
+================================================================================
+PART B: STRONG CONSISTENCY
+================================================================================
+
+Consistency Model: Strong
+
+--------------------------------------------------------------------------------
+STEPS
+--------------------------------------------------------------------------------
+1. All replicas running
+2. Stop Replica 3
+3. Write z=30 to Replica 1
+4. If successful, read z from Replica 2
+
+--------------------------------------------------------------------------------
+RESULTS
+--------------------------------------------------------------------------------
+
+Number of replicas running: _______
+Majority needed: _______
+
+PUT Result:
+  Success: _______
+  Message: _______
+
+If PUT failed:
+  Reason: _______
+
+--------------------------------------------------------------------------------
+ANALYSIS
+--------------------------------------------------------------------------------
+[Compare the behavior of eventual vs. strong consistency when a replica fails]
+[Explain why strong consistency may reject writes during failures]
+[Discuss the trade-off between availability and consistency]
+
+================================================================================
+PART C: EXTREME FAILURE (2 REPLICAS DOWN)
+================================================================================
+
+Consistency Model: Strong
+Replicas Running: 1 of 3
+
+PUT Result:
+  Success: _______
+  Message: _______
+
+--------------------------------------------------------------------------------
+ANALYSIS
+--------------------------------------------------------------------------------
+[Explain why the write failed when only 1 replica was available]
+[Discuss whether this behavior is desirable for critical applications]

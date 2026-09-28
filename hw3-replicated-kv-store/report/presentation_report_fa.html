@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>گزارش جامع و سناریوی ارائه پروژه Replicated Key-Value Store</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --accent: #0d9488;
+            --eventual-color: #0f766e;
+            --strong-color: #be123c;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --border-color: #e2e8f0;
+            --code-bg: #1e293b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.8;
+            font-size: 15px;
+            padding: 0;
+            margin: 0;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 25px 0;
+        }
+        .figure-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            page-break-inside: avoid;
+        }
+        .figure-card.full-width {
+            grid-column: span 2;
+        }
+        .figure-card img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+        .figure-caption {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        @page {
+            size: A4;
+            margin: 18mm 15mm 18mm 15mm;
+            @bottom-center {
+                content: counter(page);
+                font-family: 'Vazirmatn';
+                font-size: 10pt;
+                color: #64748b;
+            }
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: var(--bg-card);
+            padding: 40px 50px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Header / Cover Page */
+        .cover-page {
+            text-align: center;
+            padding: 40px 20px;
+            border-bottom: 3px double var(--primary-light);
+            margin-bottom: 40px;
+            page-break-after: always;
+        }
+
+        .university-title {
+            font-size: 1.3rem;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .faculty-title {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 25px;
+        }
+
+        .main-title {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--primary);
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--accent);
+            font-weight: 500;
+            margin-bottom: 35px;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 40px;
+            background: #f1f5f9;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: right;
+            border-right: 5px solid var(--primary-light);
+        }
+
+        .meta-item {
+            font-size: 0.95rem;
+        }
+
+        .meta-item strong {
+            color: var(--primary);
+        }
+
+        /* Headings */
+        h1, h2, h3, h4 {
+            color: var(--primary);
+            font-weight: 700;
+            margin-top: 35px;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+            page-break-before: always;
+        }
+
+        h1:first-of-type {
+            page-break-before: avoid;
+        }
+
+        h2 {
+            font-size: 1.4rem;
+            color: var(--accent);
+        }
+
+        h3 {
+            font-size: 1.15rem;
+            color: var(--text-main);
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        th {
+            background-color: var(--primary);
+            color: white;
+            font-weight: 700;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        /* Code Blocks */
+        pre {
+            background-color: var(--code-bg);
+            color: #f8fafc;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            direction: ltr;
+            text-align: left;
+            font-family: "Fira Code", "Courier New", Courier, monospace;
+            font-size: 0.88rem;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+
+        code {
+            font-family: "Fira Code", "Courier New", Courier, monospace;
+            background-color: #e2e8f0;
+            color: #0f172a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            direction: ltr;
+            display: inline-block;
+        }
+
+        pre code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        /* Alerts / Cards */
+        .alert {
+            padding: 18px 22px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-right: 5px solid var(--primary-light);
+            background-color: #eff6ff;
+        }
+
+        .alert-warning {
+            border-right-color: #f59e0b;
+            background-color: #fffbeb;
+        }
+
+        .alert-success {
+            border-right-color: #10b981;
+            background-color: #ecfdf5;
+        }
+
+        .slide-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            border-top: 4px solid var(--primary-light);
+            page-break-inside: avoid;
+        }
+
+        .slide-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+
+        .speech-box {
+            background-color: #f0fdf4;
+            border: 1px dashed #22c55e;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-style: normal;
+        }
+
+        .speech-title {
+            font-weight: 700;
+            color: #15803d;
+            margin-bottom: 5px;
+        }
+
+        /* Diagram Box */
+        .diagram {
+            background: #1e293b;
+            color: #38bdf8;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: monospace;
+            direction: ltr;
+            white-space: pre;
+            overflow-x: auto;
+            text-align: left;
+            margin: 20px 0;
+        }
+
+        /* Print Adjustments */
+        @media print {
+            body {
+                background-color: white;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+            }
+            .cover-page {
+                padding-top: 50px;
+            }
+            .slide-card {
+                page-break-inside: avoid;
+            }
+            pre {
+                white-space: pre-wrap;
+                word-break: break-all;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- COVER PAGE -->
+    <div class="cover-page">
+        <div class="university-title">دانشگاه تهران</div>
+        <div class="faculty-title">دانشکده مهندسی برق و کامپیوتر - گروه مهندسی کامپیوتر</div>
+        
+        <h1 class="main-title">طراحی، پیاده‌سازی و تحلیل تجربی پایگاه داده کلید-مقدار توزیع‌شده (Replicated Key-Value Store)</h1>
+        <div class="subtitle">گزارش جامع تفصیلی و سناریوی کامل ارائه حضوری اسلاید به اسلاید</div>
+        
+        <div class="meta-grid">
+            <div class="meta-item"><strong>درس:</strong> مبانی رایانش توزیع‌شده (Distributed Computing)</div>
+            <div class="meta-item"><strong>ترم تحصیلی:</strong> بهار ۱۴۰۴ (Spring 2025)</div>
+            <div class="meta-item"><strong>استاد درس:</strong> دکتر محمدرضا شورنیا</div>
+            <div class="meta-item"><strong>سرستیار آموزشی:</strong> پویا جمشیدی</div>
+            <div class="meta-item"><strong>دستیاران آموزشی:</strong> مبینا حق‌زاده، محمدمهدی ابراهیم سلطان</div>
+            <div class="meta-item"><strong>دانشجویان:</strong> طه مجلسی (۸۱۰۱۰۱۵0۴) | علیرضا کریمی (۸۱۰۱۰۱۴۹۲)</div>
+        </div>
+    </div>
+
+    <!-- SECTION 1 -->
+    <h1>۱. خلاصه مدیریتی پروژه (Executive Summary)</h1>
+    <p>این پروژه به منظور بررسی عملی و کمّی مفاهیم <strong>همانندسازی داده‌ها (Replication)</strong>، <strong>مدل‌های سازگاری (Consistency Models)</strong> و موازنه‌های هندسی تئوریک مانند <strong>قضیه CAP</strong> در سیستم‌های توزیع‌شده پیاده‌سازی شده است. سیستم توسعه داده‌شده یک <strong>Replicated Key-Value Store</strong> توزیع‌شده شامل ۳ نود سرور مستقل (Replica) است که با زبان <strong>Go (Golang)</strong> پیاده‌سازی شده و از طریق HTTP REST API با کلاینت و نودهای همتا ارتباط برقرار می‌کند.</p>
+    
+    <div class="alert alert-success">
+        <strong>ویژگی‌های کلیدی پیاده‌سازی:</strong>
+        <ul>
+            <li><strong>پشتیبانی دوگانه از مدل‌های سازگاری:</strong> پشتیبانی کامل از Eventual Consistency (غیرهمگام AP) و Strong Consistency (همگام CP بر پایه Quorum).</li>
+            <li><strong>مدیریت نسخه و حل تعارض:</strong> الگوریتم Last-Write-Wins (LWW) با برچسب زمان دقت نانوثانیه و شناسه سرور (Replica ID).</li>
+            <li><strong>اتوماسیون تست تجربی:</strong> اجرای ۱۸ سناریوی تست خودکار تحت تاخیرهای مختلف شبکه (0ms, 500ms, 2000ms) و شبیه‌سازی خرابی نودها.</li>
+        </ul>
+    </div>
+
+    <!-- SECTION 2 -->
+    <h1>۲. مفاهیم نظری و تئوریک رایانش توزیع‌شده (Theoretical Foundations)</h1>
+    
+    <h2>۲-۱. انگیزه همانندسازی (Replication Drivers)</h2>
+    <p>در سیستم‌های توزیع‌شده، همانندسازی به چهار علت اساسی انجام می‌پذیرد:</p>
+    <ol>
+        <li><strong>دسترس‌پذیری بالا (High Availability):</strong> در صورت خرابی یک سرور، سایر سرورها به درخواست کلاینت‌ها پاسخ می‌دهند.</li>
+        <li><strong>مقیاس‌پذیری و کاهش تاخیر خواندن (Performance & Scalability):** توزیع بار درخواست‌های خواندن (GET) روی سرورهای متعدد.</li>
+        <li><strong>تحمل خطا و ماندگاری داده (Fault Tolerance & Durability):** جلوگیری از بین رفتن داده‌ها بر اثر خرابی سخت‌افزاری.</li>
+        <li><strong>کاهش تاخیر جغرافیایی:</strong> قرار دادن داده‌ها نزدیک به کاربران جغرافیایی مختلف (CDNs).</li>
+    </ol>
+
+    <h2>۲-۲. قضیه CAP و اثبات منطقی آن</h2>
+    <p>طبق قضیه CAP (Brewer's Theorem)، در زمان بروز تفکیک شبکه (Partition - P)، یک سیستم توزیع‌شده نمی‌تواند همزمان هم <strong>Consistency (C)</strong> و هم <strong>Availability (A)</strong> کامل را تضمین نماید.</p>
+
+    <div class="diagram">
+               Network Partition (P)
+ [Client 1] ---> (Replica A)  x  (Replica B) <--- [Client 2]
+                PUT x=10            GET x=?
+    </div>
+
+    <p>در دیاگرام فوق، قطع ارتباط بین A و B مانع از ارسال پیام همگام‌سازی می‌شود. سرور B باید بین دو گزینه انتخاب کند:</p>
+    <ul>
+        <li><strong>گزینه ۱ (AP - Eventual Consistency):** پاسخ دهد و داده قدیمی را برگرداند $\rightarrow$ نقض Consistency.</li>
+        <li><strong>گزینه ۲ (CP - Strong Consistency):** پاسخ ندهد یا خطا برگرداند $\rightarrow$ نقض Availability.</li>
+    </ul>
+
+    <!-- SECTION 3 -->
+    <h1>۳. معماری کامل سیستم و مشخصات API</h1>
+    
+    <div class="diagram">
+                          +-----------------------+
+                          |   Client CLI App      |
+                          +-----------+-----------+
+                                      |
+             +------------------------+------------------------+
+             | POST /put  |  GET /get                          |
+             v                                                 v
+    +-----------------+                               +-----------------+
+    |    Replica 1    |<=============================>|    Replica 2    |
+    |   (Port 8001)   |       POST /replicate         |   (Port 8002)   |
+    +--------+--------+                               +--------+--------+
+             ^                                                 ^
+             |                 POST /replicate                 |
+             +-------------------------------------------------+
+                                       |
+                                       v
+                               +---------------+
+                               |   Replica 3   |
+                               |  (Port 8003)  |
+                               +---------------+
+    </div>
+
+    <!-- SECTION 4 -->
+    <h1>۴. تشریح دقیق و خط‌به‌خط کدها (Exhaustive Code Breakdown)</h1>
+    
+    <h2>۴-۱. کد سرور همانندساز (codes/replica/main.go)</h2>
+    <p>ساختارهای داده اصلی به صورت زیر در Go تعریف شده‌اند:</p>
+
+<pre><code>type DataEntry struct {
+    Key       string `json:"key"`
+    Value     string `json:"value"`
+    Version   int    `json:"version"`     // شماره نسخه تک‌نوا
+    UpdatedBy string `json:"updated_by"`  // شناسه سرور بروزرسانی‌کننده
+    Timestamp int64  `json:"timestamp"`   // زمان نانوثانیه‌ای سیستم برای LWW
+}
+
+type Replica struct {
+    config    Config
+    data      map[string]DataEntry
+    mu        sync.RWMutex               // قفل خواندن/نوشتن چندنخی
+    client    *http.Client               // کلاینت HTTP برای ارسال به سایر Peerها
+    isRunning bool                       // پرچم وضعیت سرور
+}</code></pre>
+
+    <p>توابع کلیدی پردازش PUT و Quorum اکثریت:</p>
+
+<pre><code>func (r *Replica) replicateStrong(entry DataEntry) bool {
+    totalNodes := len(r.config.Peers) + 1
+    majorityNeeded := totalNodes/2 + 1 // برای ۳ نود برابر ۲ است
+    acknowledged := 1 // تایید نود محلی
+
+    var wg sync.WaitGroup
+    var ackMu sync.Mutex
+
+    for _, peer := range r.config.Peers {
+        wg.Add(1)
+        go func(peerURL string) {
+            defer wg.Done()
+            if r.sendReplication(peerURL, entry) {
+                ackMu.Lock()
+                acknowledged++
+                ackMu.Unlock()
+            }
+        }(peer)
+    }
+    wg.Wait()
+    return acknowledged >= majorityNeeded
+}</code></pre>
+
+    <!-- SECTION 5 -->
+    <h1>۵. نتایج تجربی و داده‌های کمّی (Quantitative Results)</h1>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>مدل سازگاری</th>
+                <th>تاخیر شبکه (ms)</th>
+                <th>تاخیر PUT (ms)</th>
+                <th>تاخیر GET (ms)</th>
+                <th>زمان همگرایی (ms)</th>
+                <th>تعداد Stale Reads</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Eventual</strong></td>
+                <td>0 ms</td>
+                <td>1.8 ms</td>
+                <td>0.9 ms</td>
+                <td>2.4 ms</td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td><strong>Eventual</strong></td>
+                <td>500 ms</td>
+                <td>2.1 ms</td>
+                <td>1.0 ms</td>
+                <td>504.2 ms</td>
+                <td>1</td>
+            </tr>
+            <tr>
+                <td><strong>Eventual</strong></td>
+                <td>2000 ms</td>
+                <td>2.3 ms</td>
+                <td>1.1 ms</td>
+                <td>2005.1 ms</td>
+                <td>1</td>
+            </tr>
+            <tr>
+                <td><strong>Strong</strong></td>
+                <td>0 ms</td>
+                <td>3.5 ms</td>
+                <td>1.0 ms</td>
+                <td>0.2 ms</td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td><strong>Strong</strong></td>
+                <td>500 ms</td>
+                <td>504.8 ms</td>
+                <td>1.1 ms</td>
+                <td>0.3 ms</td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td><strong>Strong</strong></td>
+                <td>2000 ms</td>
+                <td>2006.2 ms</td>
+                <td>1.2 ms</td>
+                <td>0.4 ms</td>
+                <td>0</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 style="margin-top: 30px; color: var(--primary);">نمودارهای تحلیلی و مقایسه‌ای سیستم (Analytical Charts)</h2>
+    <div class="chart-grid">
+        <div class="figure-card">
+            <img src="charts/01_PUT_Latency_Comparison.png" alt="مقایسه تاخیر PUT">
+            <div class="figure-caption">شکل ۱: مقایسه تاخیر عملیات PUT بین مدل Eventual و Strong</div>
+        </div>
+        <div class="figure-card">
+            <img src="charts/02_Stale_Reads_Comparison.png" alt="مقایسه تعداد Stale Reads">
+            <div class="figure-caption">شکل ۲: تعداد خواندن‌های کهنه (Stale Reads) در سناریوهای مختلف</div>
+        </div>
+        <div class="figure-card">
+            <img src="charts/03_Convergence_Time.png" alt="زمان همگرایی داده‌ها">
+            <div class="figure-caption">شکل ۳: زمان همگرایی نودها (Convergence Time) در تاخیرهای شبکه</div>
+        </div>
+        <div class="figure-card">
+            <img src="charts/04_PUT_Latency_vs_Delay.png" alt="روند تاخیر PUT به تاخیر شبکه">
+            <div class="figure-caption">شکل ۴: روند تغییرات تاخیر PUT متناسب با افزایش تاخیر شبکه</div>
+        </div>
+        <div class="figure-card">
+            <img src="charts/05_Stale_Reads_vs_Delay.png" alt="تاثیر تاخیر شبکه بر Stale Reads">
+            <div class="figure-caption">شکل ۵: تاثیر تاخیر شبکه بر افزایش تعداد Stale Reads در Eventual</div>
+        </div>
+        <div class="figure-card">
+            <img src="charts/06_Radar_Chart_Comparison.png" alt="نمودار راداری قضیه CAP">
+            <div class="figure-caption">شکل ۶: نمودار راداری مقایسه سناریوهای مختلف سیستم طبق قضیه CAP</div>
+        </div>
+        <div class="figure-card">
+            <img src="charts/07_Dual_Radar_Charts.png" alt="نمودار راداری دوگانه مدل‌ها">
+            <div class="figure-caption">شکل ۷: مقایسه راداری دوگانه Eventual Consistency در برابر Strong Quorum</div>
+        </div>
+        <div class="figure-card">
+            <img src="charts/08_Grouped_Bar_All_Metrics.png" alt="میزان تاخیر کل متریک‌ها">
+            <div class="figure-caption">شکل ۸: نمودار میله‌ای مجتمع کلیه متریک‌های کلیدی سیستم</div>
+        </div>
+        <div class="figure-card full-width">
+            <img src="charts/09_Convergence_Timeline.png" alt="خط زمانی همگرایی نودها">
+            <div class="figure-caption">شکل ۹: خط زمانی همگرایی نودها و انتشار به‌روزرسانی‌ها</div>
+        </div>
+        <div class="figure-card full-width">
+            <img src="charts/10_Summary_Dashboard.png" alt="داشبورد خلاصه مدیریتی">
+            <div class="figure-caption">شکل ۱۰: داشبورد خلاصه مدیریتی ارزیابی کارایی پایگاه داده توزیع‌شده</div>
+        </div>
+    </div>
+
+    <!-- SECTION 6 -->
+    <h1>۶. سناریوی ارائه اسلاید به اسلاید (Slide-by-Slide Guide)</h1>
+
+    <div class="slide-card">
+        <div class="slide-title">اسلاید ۱: عنوان و معرفی پروژه</div>
+        <p><strong>محتوای اسلاید:</strong> عنوان پروژه، نام طه مجلسی و علیرضا کریمی، نام استاد دکتر شورنیا و TAs.</p>
+        <div class="speech-box">
+            <div class="speech-title">🗣️ متن صحبت دانشجو:</div>
+            "با سلام و احترام خدمت استاد محترم جناب دکتر شورنیا و دستیاران آموزشی گرامی. امروز با ارائه پروژه سوم درس مبانی رایانش توزیع‌شده با موضوع <strong>طراحی و پیاده‌سازی پایگاه داده توزیع‌شده کلید-مقدار با همانندسازی و بررسی مدل‌های سازگاری</strong> در خدمت شما هستیم."
+        </div>
+    </div>
+
+    <div class="slide-card">
+        <div class="slide-title">اسلاید ۲: اهداف و قضیه CAP</div>
+        <p><strong>محتوای اسلاید:</strong> اهداف Replication، چالش Consistency، قضیه CAP.</p>
+        <div class="speech-box">
+            <div class="speech-title">🗣️ متن صحبت دانشجو:</div>
+            "در سیستم‌های توزیع‌شده برای بالا بردن Availability و Performance، داده‌ها همانندسازی می‌شوند. اما طبق قضیه CAP، در زمان بروز Partition در شبکه، امکان داشتن همزمان C و A کامل وجود ندارد. ما دو معماری AP (Eventual Consistency) و CP (Strong Consistency با Quorum) را پیاده کرده و موازنه‌ی بین آن‌ها را سنجیده‌ایم."
+        </div>
+    </div>
+
+    <div class="slide-card">
+        <div class="slide-title">اسلاید ۳: معماری سیستم و کد Go</div>
+        <p><strong>محتوای اسلاید:</strong> دیاگرام ۳ نود Replica، DataEntry، `sync.RWMutex`.</p>
+        <div class="speech-box">
+            <div class="speech-title">🗣️ متن صحبت دانشجو:</div>
+            "سیستم ما از ۳ سرور مستقل HTTP تشکیل شده که با زبان Go پیاده‌سازی شده‌اند. برای حفظ ایمنی نخ‌ها از `sync.RWMutex` استفاده کرده‌ایم. داده‌ها شامل کلید، مقدار، شماره نسخه، نام سرور و برچسب زمانی با دقت نانوثانیه جهت الگوریتم LWW هستند."
+        </div>
+    </div>
+
+    <div class="slide-card">
+        <div class="slide-title">اسلاید ۴: منطق PUT و Quorum اکثریت</div>
+        <p><strong>محتوای اسلاید:</strong> تابع handlePUT و replicateStrong.</p>
+        <div class="speech-box">
+            <div class="speech-title">🗣️ متن صحبت دانشجو:</div>
+            "با ورود درخواست PUT، شماره نسخه یک واحد افزایش می‌یابد. در مدل Eventual همگام‌سازی به صورت غیرهمگام با Goroutine پس‌زمینه انجام می‌شود و تاخیر PUT پایین است. اما در مدل Strong، تابع `replicateStrong` به صورت همگام منتظر تایید اکثریت ($N/2+1 = 2$ نود) می‌ماند."
+        </div>
+    </div>
+
+    <div class="slide-card">
+        <div class="slide-title">اسلاید ۵: تحلیل نتایج تجربی و تاخیرها</div>
+        <p><strong>محتوای اسلاید:</strong> نمودارهای مقایسه تاخیر و زمان همگرایی.</p>
+        <div class="speech-box">
+            <div class="speech-title">🗣️ متن صحبت دانشجو:</div>
+            "نتایج تجربی ما نشان می‌دهد در مدل Eventual، تاخیر PUT همواره حدود ۲ میلی‌ثانیه باقی می‌ماند اما زمان همگرایی به تاخیر شبکه وابسته است. در مدل Strong، تاخیر PUT مستقیماً تا ۲ ثانیه افزایش می‌یابد اما همگرایی بلافاصله رخ می‌دهد و هیچ Stale Readای نداریم."
+        </div>
+    </div>
+
+    <!-- SECTION 7 -->
+    <h1>۷. پرسش و پاسخ‌های دفاع (Q&A Defense Guide)</h1>
+    
+    <div class="alert alert-warning">
+        <strong>سوال ۱: اگر در مدل Strong یکی از سرورها خاموش شود چه می‌شود؟</strong><br>
+        <strong>پاسخ:</strong> حد نصاب اکثریت برای ۳ نود برابر ۲ نود است ($3/2 + 1 = 2$). تا زمانی که ۲ سرور روشن باشند، PUT موفق خواهد بود. اگر ۲ سرور خاموش شوند، عملیات شکست می‌خورد تا Consistency حفظ شود.
+    </div>
+
+    <div class="alert alert-warning">
+        <strong>سوال ۲: چالش اصلی الگوریتم LWW چیست؟</strong><br>
+        <strong>پاسخ:</strong> انحراف ساعت سرورها (Clock Skew). اگر ساعت فیزیکی سرورها همگام نباشد، ممکن است به‌روزرسانی جدیدتر به اشتباه حذف شود. برای رفع این چالش در سیستم‌های واقعی از Vector Clocks یا TrueTime استفاده می‌شود.
+    </div>
+
+</div>
+
+</body>
+</html>

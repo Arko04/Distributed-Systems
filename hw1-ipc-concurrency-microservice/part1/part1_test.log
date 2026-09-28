@@ -1,0 +1,97 @@
+
+==================================================
+>>> Build interface
+==================================================
+Removing previous interface binary...
+Building interface.go ...
+[32m✓ interface build succeeded.[0m
+
+==================================================
+>>> Section 1 - Normal operations (ADD, SUB, MUL, DIV, MOD)
+==================================================
+[INTERFACE] 2026/04/22 08:24:07 starting interface...
+Simple IPC Calculator Interface
+Format: OP A B (e.g., ADD 5 7)
+Supported ops: ADD, SUB, MUL, DIV, MOD
+Type 'exit' to quit.
+> OK 12
+> OK 7
+> OK 10
+> OK 4.5
+> OK 1
+> bye.
+[INTERFACE] 2026/04/22 08:24:07 interface stopped.
+
+==================================================
+>>> Section 2 - Unknown operation
+==================================================
+[INTERFACE] 2026/04/22 08:24:07 starting interface...
+Simple IPC Calculator Interface
+Format: OP A B (e.g., ADD 5 7)
+Supported ops: ADD, SUB, MUL, DIV, MOD
+Type 'exit' to quit.
+> ERR unknown_operation: FOO
+> bye.
+[INTERFACE] 2026/04/22 08:24:08 interface stopped.
+
+==================================================
+>>> Section 3 - Wrong argument count
+==================================================
+[INTERFACE] 2026/04/22 08:24:08 starting interface...
+Simple IPC Calculator Interface
+Format: OP A B (e.g., ADD 5 7)
+Supported ops: ADD, SUB, MUL, DIV, MOD
+Type 'exit' to quit.
+> ERR invalid_argument_count: got 2, want 3
+> ERR invalid_argument_count: got 4, want 3
+> ERR invalid_argument_count: got 1, want 3
+> bye.
+[INTERFACE] 2026/04/22 08:24:13 interface stopped.
+
+==================================================
+>>> Section 4 - Invalid numeric input
+==================================================
+[INTERFACE] 2026/04/22 08:24:13 starting interface...
+Simple IPC Calculator Interface
+Format: OP A B (e.g., ADD 5 7)
+Supported ops: ADD, SUB, MUL, DIV, MOD
+Type 'exit' to quit.
+> ERR invalid_number_a: strconv.ParseFloat: parsing "a": invalid syntax
+> ERR invalid_number_b: strconv.ParseFloat: parsing "b": invalid syntax
+> ERR invalid_number_a: strconv.ParseFloat: parsing "one": invalid syntax
+> bye.
+[INTERFACE] 2026/04/22 08:24:15 interface stopped.
+
+==================================================
+>>> Section 5 - Division by zero
+==================================================
+[INTERFACE] 2026/04/22 08:24:15 starting interface...
+Simple IPC Calculator Interface
+Format: OP A B (e.g., ADD 5 7)
+Supported ops: ADD, SUB, MUL, DIV, MOD
+Type 'exit' to quit.
+> ERR division_by_zero
+> ERR mod_by_zero
+> bye.
+[INTERFACE] 2026/04/22 08:24:16 interface stopped.
+
+==================================================
+>>> Section 6 - Simulating worker/pipe disconnection
+==================================================
+[33mThe interface will send several requests now. Please go to the WORKER terminal and press Ctrl+C in the middle to simulate a crash.[0m
+[INTERFACE] 2026/04/22 08:24:16 starting interface...
+Simple IPC Calculator Interface
+Format: OP A B (e.g., ADD 5 7)
+Supported ops: ADD, SUB, MUL, DIV, MOD
+Type 'exit' to quit.
+> OK 2
+> OK 3
+> OK 6
+> OK 2
+> bye.
+[INTERFACE] 2026/04/22 08:24:18 interface stopped.
+
+==================================================
+>>> End of tests
+==================================================
+[32mAll scenarios executed. Full output saved to part1_test.log.[0m

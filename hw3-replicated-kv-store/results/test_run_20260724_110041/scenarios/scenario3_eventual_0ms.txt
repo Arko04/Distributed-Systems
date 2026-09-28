@@ -1,0 +1,132 @@
+================================================================================
+SCENARIO 3: CONCURRENT CONFLICT RESOLUTION
+================================================================================
+
+CONFIGURATION:
+  Date:                 Fri Jul 24 11:01:02 +0330 2026
+  Consistency Model:    eventual
+  Network Delay:        0ms
+  Conflict Resolution:  Last-Write-Wins (LWW)
+  Test Run ID:          20260724_110041
+
+--------------------------------------------------------------------------------
+OBJECTIVE
+--------------------------------------------------------------------------------
+Demonstrate conflict resolution when two replicas receive different values
+for the same key simultaneously (concurrent writes).
+
+--------------------------------------------------------------------------------
+TEST EXECUTION
+--------------------------------------------------------------------------------
+
+=== STEP 1: Writing z=100 to Replica 1 ===
+Timestamp (ns): 1784878262140013000
+Response:
+{
+    "success": true,
+    "message": "Value stored successfully",
+    "version": 1,
+    "updated_by": "replica1"
+}
+
+=== STEP 2: Writing z=200 to Replica 2 (CONCURRENT - before replication) ===
+Timestamp (ns): 1784878262305691000
+Response:
+{
+    "success": true,
+    "message": "Value stored successfully",
+    "version": 2,
+    "updated_by": "replica2"
+}
+
+Time difference between writes: 165ms
+
+=== STEP 3: Waiting for Replication and Conflict Resolution ===
+  (Waiting 5 seconds for all replicas to exchange data...)
+
+=== STEP 4: Final State Across All Replicas ===
+
+--- Replica 1 (http://localhost:8001) ---
+{
+    "key": "z",
+    "value": "200",
+    "version": 2,
+    "updated_by": "replica2",
+    "timestamp": 1784878262324917000,
+    "found": true
+}
+
+--- Replica 2 (http://localhost:8002) ---
+{
+    "key": "z",
+    "value": "200",
+    "version": 2,
+    "updated_by": "replica2",
+    "timestamp": 1784878262324917000,
+    "found": true
+}
+
+--- Replica 3 (http://localhost:8003) ---
+{
+    "key": "z",
+    "value": "200",
+    "version": 2,
+    "updated_by": "replica2",
+    "timestamp": 1784878262324917000,
+    "found": true
+}
+
+
+=== Conflict Resolution Analysis ===
+
+Replica 1 value: 200
+Replica 2 value: 200
+Replica 3 value: 200
+
+CONVERGENCE: ✅ All replicas have the same value
+WINNING VALUE: 200
+WINNER: Second write (z=200) - higher timestamp
+Explanation: Write 2 had timestamp 1784878262305691000 > Write 1 timestamp 1784878262140013000
+
+Conflict Resolution Strategy: Last-Write-Wins (LWW)
+  - Compares timestamps when versions are equal
+  - Higher timestamp wins
+  - All replicas use the same rule (deterministic)
+  - Losing value is silently discarded
+
+--------------------------------------------------------------------------------
+ANALYSIS
+--------------------------------------------------------------------------------
+
+LAST-WRITE-WINS (LWW) EVALUATION:
+
+Advantages:
+  ✅ Simple to implement
+  ✅ Deterministic (same result on all replicas)
+  ✅ Automatic (no human intervention needed)
+  ✅ Convergent (system stabilizes quickly)
+
+Disadvantages:
+  ❌ Silent data loss (losing value disappears)
+  ❌ Not suitable for all data types (counters, lists)
+  ❌ Relies on synchronized clocks
+  ❌ Last writer may not have seen the first write
+
+BETTER ALTERNATIVES FOR SOME USE CASES:
+  - CRDTs (Conflict-free Replicated Data Types): Auto-merge
+  - Multi-Version: Keep both values, let application decide
+  - Operational Transform: For collaborative editing
+
+--------------------------------------------------------------------------------
+METRICS SUMMARY
+--------------------------------------------------------------------------------
+
+  Conflict Detected:                  Yes
+  Resolution Method:                  Last-Write-Wins (LWW)
+  Winning Value:                      200
+  All Replicas Converged:             Yes
+  Write 1 Timestamp:                  1784878262140013000
+  Write 2 Timestamp:                  1784878262305691000
+  Consistency Model:                  eventual
+  Network Delay:                      0ms
+

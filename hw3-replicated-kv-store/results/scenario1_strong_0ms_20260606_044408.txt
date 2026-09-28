@@ -1,0 +1,85 @@
+================================================================================
+SCENARIO 1: TEMPORARY INCONSISTENCY OBSERVATION
+================================================================================
+Date: Sat Jun  6 04:45:28 +0330 2026
+Consistency Model: strong
+Network Delay: 0ms
+
+--------------------------------------------------------------------------------
+OBJECTIVE
+--------------------------------------------------------------------------------
+Demonstrate that in eventual consistency mode, a read immediately after
+a write to a different replica may return stale or missing data.
+
+--------------------------------------------------------------------------------
+STEPS
+--------------------------------------------------------------------------------
+1. Write x=10 to Replica 1
+2. Immediately read x from Replica 2
+3. Wait for replication to complete
+4. Read x from Replica 2 again
+5. Check all replicas
+
+--------------------------------------------------------------------------------
+RESULTS
+--------------------------------------------------------------------------------
+
+--- Step 1: PUT x=10 to Replica 1 ---
+PUT Latency: 44ms
+Response: {"success":true,"message":"Value stored successfully","version":1,"updated_by":"replica1"}
+
+--- Step 2: Immediate GET from Replica 2 ---
+GET Latency: 30ms
+Response: {"key":"x","value":"10","version":1,"updated_by":"replica1","timestamp":1780708528960786000,"found":true}
+STALE READ: No (value already propagated)
+
+--- Step 3: Waiting for convergence ---
+Convergence Time: 0s
+
+--- Step 4: Final state across all replicas ---
+
+Replica 1:
+{
+    "key": "x",
+    "value": "10",
+    "version": 1,
+    "updated_by": "replica1",
+    "timestamp": 1780708528960786000,
+    "found": true
+}
+
+Replica 2:
+{
+    "key": "x",
+    "value": "10",
+    "version": 1,
+    "updated_by": "replica1",
+    "timestamp": 1780708528960786000,
+    "found": true
+}
+
+Replica 3:
+{
+    "key": "x",
+    "value": "10",
+    "version": 1,
+    "updated_by": "replica1",
+    "timestamp": 1780708528960786000,
+    "found": true
+}
+
+--------------------------------------------------------------------------------
+ANALYSIS
+--------------------------------------------------------------------------------
+With strong consistency:
+- The PUT waited for majority acknowledgment
+- All reads return the latest value immediately
+- No stale reads possible
+
+--------------------------------------------------------------------------------
+METRICS SUMMARY
+--------------------------------------------------------------------------------
+PUT Latency: 44ms
+GET Latency: 30ms
+Convergence Time: 0
+

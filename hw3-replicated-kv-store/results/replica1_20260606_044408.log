@@ -1,0 +1,35 @@
+2026/06/06 04:46:00 ╔══════════════════════════════════════════════════════════════╗
+2026/06/06 04:46:00 ║  REPLICA SERVER                                             ║
+2026/06/06 04:46:00 ╠══════════════════════════════════════════════════════════════╣
+2026/06/06 04:46:00 ║  ID:              replica1                                   ║
+2026/06/06 04:46:00 ║  Address:         localhost:8001                             ║
+2026/06/06 04:46:00 ║  Consistency:     strong                                     ║
+2026/06/06 04:46:00 ║  Network Delay:   2000                                   ms ║
+2026/06/06 04:46:00 ║  Peers:           2 peers                                    ║
+2026/06/06 04:46:00 ║    Peer 1:         http://localhost:8002                  ║
+2026/06/06 04:46:00 ║    Peer 2:         http://localhost:8003                  ║
+2026/06/06 04:46:00 ╚══════════════════════════════════════════════════════════════╝
+2026/06/06 04:46:00 Server starting on localhost:8001...
+2026/06/06 04:46:06 [127.0.0.1:55277] GET /health - 178.5µs
+2026/06/06 04:46:12 [replica1] ✅ Majority ACK received from http://localhost:8002 (2/3)
+2026/06/06 04:46:12 [replica1] ✅ Majority ACK received from http://localhost:8003 (3/3)
+2026/06/06 04:46:12 [replica1] Strong replication result: 3/3 acknowledged (need 2) - SUCCESS ✅
+2026/06/06 04:46:12 [replica1] PUT x=10 (version 1, model: strong)
+2026/06/06 04:46:12 [127.0.0.1:55283] POST /put - 2.004041042s
+2026/06/06 04:46:12 [replica1] GET x -> 10 (version 1)
+2026/06/06 04:46:12 [127.0.0.1:55294] GET /get - 94µs
+2026/06/06 04:46:12 [replica1] GET x -> 10 (version 1)
+2026/06/06 04:46:12 [127.0.0.1:55297] GET /get - 42.958µs
+2026/06/06 04:46:14 [replica1] ✅ Majority ACK received from http://localhost:8003 (2/3)
+2026/06/06 04:46:14 [replica1] ✅ Majority ACK received from http://localhost:8002 (3/3)
+2026/06/06 04:46:14 [replica1] Strong replication result: 3/3 acknowledged (need 2) - SUCCESS ✅
+2026/06/06 04:46:14 [replica1] PUT w=500 (version 1, model: strong)
+2026/06/06 04:46:14 [127.0.0.1:55300] POST /put - 2.002527875s
+2026/06/06 04:46:14 [replica1] GET w -> 500 (version 1)
+2026/06/06 04:46:14 [127.0.0.1:55301] GET /get - 41.166µs
+2026/06/06 04:46:15 [replica1] GET w -> 500 (version 1)
+2026/06/06 04:46:15 [127.0.0.1:55304] GET /get - 72.375µs
+2026/06/06 04:46:15 [replica1] GET w -> 500 (version 1)
+2026/06/06 04:46:15 [127.0.0.1:55307] GET /get - 53.666µs
+2026/06/06 04:46:15 [replica1] GET w -> 500 (version 1)
+2026/06/06 04:46:15 [127.0.0.1:55308] GET /get - 43.083µs

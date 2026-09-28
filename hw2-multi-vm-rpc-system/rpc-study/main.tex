@@ -1,0 +1,1726 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{amsmath}
+\usepackage{amssymb}
+% \usepackage{tipa}
+% \usepackage{makecell}
+% \usepackage[bottom]{footmisc}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    language=Go,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red},
+    showstringspaces=false,
+    tabsize=2,
+}
+
+\title{\textbf{Remote Procedure Call (RPC)} \\[0.5cm] \large Concepts, Technologies, Failure Modes, and Comprehensive Comparative Analysis}
+\author{Taha Majlesi \\ \texttt{Student ID: 810101504} \\ \href{mailto:t.majlesi@ut.ac.ir}{t.majlesi@ut.ac.ir}}
+\date{Spring 2026 \\ University of Tehran}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Introduction}
+This document provides an \textbf{exhaustive, in-depth study} of Remote Procedure Call (RPC) as required for the second assignment of the \textit{Fundamentals of Distributed Computing} course at the University of Tehran. 
+It covers the definition of RPC, its historical origins, core concepts, detailed component roles, serialization and IDL intricacies, an exhaustive taxonomy of common errors, a comprehensive comparison with REST, and an evaluation of three major RPC technologies: gRPC, JSON-RPC, and XML-RPC (with additional references to Apache Thrift, Cap’n Proto, and SOAP). 
+Furthermore, we discuss failure handling, idempotency, security, load balancing, protocol evolution, and advanced patterns. The document concludes with answers to five analytical questions, a use-case guide, a glossary, and extensive references.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Definition of RPC}
+Remote Procedure Call (RPC) is a \textbf{communication protocol} that allows a program to execute a procedure (function) on a remote server as if it were a local function call. 
+The client calls a function, the request is marshaled (serialized) and sent over the network, the server executes the function, and the result is returned. 
+The underlying network details — socket handling, data encoding, transport protocol, and error recovery — are hidden from the developer, drastically simplifying distributed programming.
+
+\subsection{Why “Remote” and “Procedure”?}
+The term “Remote” distinguishes it from a local procedure call (within the same process). “Procedure” refers to the traditional programming construct: a named block of code that takes parameters and returns a value. RPC extends this concept across machine boundaries.
+
+\subsection{Analogy: A Telephone Call}
+Think of RPC like making a phone call: you dial a number (the remote address), wait for the other side to pick up (connection), speak your request (parameters), listen to the reply (result), and hang up. The telephone network hides the details of signal routing, switching, and transmission. Similarly, RPC hides the network complexity.
+
+\subsection{Historical Background}
+RPC was introduced in the early 1980s by Bruce Jay Nelson as part of his PhD thesis at Carnegie Mellon University. The first widely used implementation was Sun RPC (also called ONC RPC) developed by Sun Microsystems in the mid-1980s, which became the basis for NFS (Network File System). Later, DCE/RPC (Distributed Computing Environment) was standardized by the Open Software Foundation and used in many Unix systems. In the 1990s, CORBA (Common Object Request Broker Architecture) emerged as a more complex object-oriented RPC system, but it was criticised for being too heavy. Modern RPC systems like gRPC (Google, 2015), Apache Thrift (Facebook, 2007), and Cap’n Proto (2013) build on these foundations, adding features like streaming, multiplexing, better serialization, and native HTTP/2 support. Each generation learned from the failures of its predecessors: CORBA’s complexity, XML-RPC’s verbosity, and Java RMI’s language-lock-in.
+
+\subsection{Key Characteristics}
+\begin{itemize}
+    \item \textbf{Location transparency}: The caller does not need to know where the procedure is executed (which machine or process). This is a double-edged sword: it simplifies code but can hide the cost of network communication.
+    \item \textbf{Synchronous by default}: The caller blocks until the reply arrives (though asynchronous/callback variants exist). Modern frameworks also support futures and promises.
+    \item \textbf{Language-independent}: Stubs can be generated for many programming languages from a single IDL, enabling heterogeneous systems.
+    \item \textbf{Interface contract}: The IDL defines the exact signature, parameter types, and return types, enabling strong type safety across languages. This contract is enforced at compile time for statically typed languages.
+    \item \textbf{Transparent serialization}: Complex data structures (arrays, structs, maps) are automatically converted to a byte stream and reconstructed on the other side, freeing the developer from manual byte manipulation.
+\end{itemize}
+
+\section{Core Idea: Calling a Remote Function}
+The core idea is to \textbf{extend the familiar local procedure call abstraction} to distributed environments. 
+Instead of sending raw messages (e.g., `SEND "add" 5 3` and then waiting for a reply using low-level sockets), the developer writes:
+
+\begin{lstlisting}[language=C]
+int result = remote\_add(5, 3);
+\end{lstlisting}
+
+The call appears identical to a local function call, but the actual computation occurs on another machine. 
+This abstraction is achieved through \textbf{stubs} and \textbf{runtime libraries} that automatically handle:
+\begin{itemize}
+    \item Marshaling arguments into a network message (e.g., Protocol Buffers, JSON, XML).
+    \item Sending the message to the remote server using a transport protocol (TCP, UDP, HTTP/2).
+    \item Waiting for the reply and unmarshaling the result.
+    \item Handling transport-level errors (timeouts, retries, duplicate detection).
+\end{itemize}
+
+\subsection{Detailed Call Flow (Step by Step)}
+We break down each step with more detail, including what happens at the network level.
+
+\begin{enumerate}
+    \item The client application calls the client stub (proxy) with parameters. For example, `remote\_add(5, 3)`.
+    \item The client stub marshals the parameters into a message (serialization). It uses a format like Protobuf, producing a byte array that might look like `\textbackslash x08\textbackslash x05\textbackslash x10\textbackslash x03` (field numbers and values).
+    \item The client stub sends the message to the server via a transport protocol. This involves:
+        \begin{itemize}
+            \item Resolving the server’s IP address (DNS).
+            \item Establishing a TCP connection (or reusing an existing one).
+            \item Sending the marshaled data, possibly with a length prefix.
+            \item Setting a timeout (deadline) for the response.
+        \end{itemize}
+    \item The server stub receives the message, unmarshals the parameters back into native data types (e.g., integers 5 and 3).
+    \item The server stub invokes the actual server implementation (the “skeleton”). For example, it calls `int add(int a, int b)` with the unmarshaled values.
+    \item The server implementation returns a result (e.g., 8) to the server stub.
+    \item The server stub marshals the result into a byte stream and sends it back to the client over the same connection.
+    \item The client stub unmarshals the result (converting bytes back to an integer) and returns it to the caller, which receives `result = 8`.
+\end{enumerate}
+
+\subsection{Flow Diagram (Text Representation)}
+The following ASCII diagram shows the interaction:
+
+\begin{verbatim}
+Client Process                 Network                      Server Process
+--------------                 ------                       --------------
+  Caller
+    |
+    v
+ Client Stub
+    |  1. Marshal(params) 
+    |  2. Send request  ------------------------------>  Server Stub
+    |                                                       |  3. Unmarshal
+    |                                                       v
+    |                                                   Skeleton (Impl)
+    |                                                       |  4. Execute
+    |                                                       v
+    |                                                   Return result
+    |  6. Unmarshal result  <----------------------------- 5. Marshal result
+    v
+ Caller (gets result)
+\end{verbatim}
+
+\section{Difference Between Local and Remote Invocation}
+The following table provides an exhaustive comparison of local and remote procedure calls across many dimensions. Understanding these differences is critical for designing robust distributed systems.
+
+\begin{longtable}{|p{4cm}|p{5cm}|p{5cm}|}
+\caption{Comprehensive comparison of local and remote procedure calls} \label{tab:local_remote} \\
+\hline
+\textbf{Aspect} & \textbf{Local Invocation} & \textbf{Remote Invocation} \\
+\hline
+Address space & Same memory space & Different processes, possibly different machines \\
+Latency & ~1-10 ns & ~0.1-1000 ms (network RTT + processing) \\
+Failure modes & Process crash, stack overflow, division by zero & Network partition, timeout, server crash, partial execution, serialization errors, security failures \\
+Parameter passing & Pointers, references, values by copy & Only values (serialized); references cannot be transmitted directly \\
+Concurrency & Threads share heap (synchronisation via mutexes) & Distributed concurrency, no shared memory (needs distributed locks or transactional systems) \\
+Security & Typically none (process isolation) & Authentication (TLS, OAuth), encryption, access control, auditing \\
+Debugging & Simple (step-through with gdb/IDE) & Complex (distributed traces, log aggregation, correlation IDs) \\
+Versioning & Same binary (one deployment) & Multiple versions possible - requires schema evolution (e.g., Protobuf optional fields) \\
+Cost & Free (negligible CPU cycles) & Non-negligible (network bandwidth, serialization CPU, memory buffers) - design must minimise RPC calls \\
+Idempotency & Naturally idempotent (unless state changes) & Must be designed; network retries can cause duplicate execution (requires idempotent operations or deduplication) \\
+Observability & Local logs, profilers & Requires distributed tracing (OpenTelemetry, Jaeger), metric aggregation (Prometheus) \\
+\hline
+\end{longtable}
+
+
+
+\subsection{Why the Differences Matter in Practice}
+\begin{itemize}
+    \item \textbf{Latency} means that calling a remote function in a loop can be devastating. Example: 1000 local calls might take 10 microseconds, but 1000 RPC calls could take 10 seconds.
+    \item \textbf{Failure modes} force you to handle timeouts and retries. A local call never “times out”; an RPC can.
+    \item \textbf{Parameter passing} means you cannot pass large arrays by reference; they are copied (serialized). A local call passes a pointer (cheap); an RPC copies the whole array (expensive).
+    \item \textbf{Versioning} requires forward-compatible message designs. Without schema evolution, upgrading the server may break old clients.
+\end{itemize}
+
+This foundational understanding sets the stage for the rest of the report, where we explore how to build RPC systems that are resilient to these differences.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Role of Client Stub and Server Stub}
+Stubs are the \textbf{key components} that make RPC possible. They are automatically generated from an IDL and act as the “glue” between the application logic and the network. Without stubs, developers would have to manually write socket code, serialise data, and handle errors - a tedious and error-prone process.
+
+\subsection{Client Stub (Proxy)}
+The client stub is a local object that implements the same interface as the remote service. To the caller, it looks exactly like a local function. Behind the scenes, it performs five crucial tasks.
+
+\begin{enumerate}
+    \item \textbf{Marshaling (Serialization)}: Converts the procedure parameters (which may be complex nested structures) into a linear byte stream using a predefined format (e.g., Protobuf, JSON, XML).  
+        \textit{Example}: A `LoginRequest` with `username="alice"` and `password="123"` becomes a sequence of bytes.  
+        \textit{Why it matters}: Different machines have different memory layouts; serialisation creates a platform-independent representation.
+
+    \item \textbf{Transport selection}: Opens a network connection to the remote server (or reuses a pooled connection), sets timeouts, and sends the byte stream.  
+        \textit{Details}: It may use TCP, HTTP/2, or even UDP. It can also attach metadata (e.g., authentication tokens, trace IDs).  
+        \textit{Why it matters}: Efficient connection reuse reduces latency and resource usage.
+
+    \item \textbf{Blocking/Async wait}: If the call is synchronous, the stub blocks the calling thread until a response arrives. If asynchronous, it registers a callback or returns a future/promise.  
+        \textit{Example}: In Go, a synchronous gRPC call blocks until the reply or timeout. In Java, you can use `listenableFuture`.  
+        \textit{Why it matters}: The caller’s expectation (blocking vs non-blocking) determines how concurrency is managed.
+
+    \item \textbf{Response unmarshaling}: Decodes the response byte stream back into the function’s return value and any out-parameters.  
+        \textit{Example}: A `LoginResponse` byte stream is turned back into a `{success: true}` object.  
+        \textit{Why it matters}: The caller receives a native data structure, not raw bytes.
+
+    \item \textbf{Error propagation}: Converts network errors, timeouts, or protocol errors into exceptions or error codes that the caller can handle.  
+        \textit{Example}: A `DeadlineExceeded` error from the transport layer becomes a gRPC status with code `DEADLINE\_EXCEEDED`.  
+        \textit{Why it matters}: The caller gets a consistent, meaningful error instead of a cryptic “connection reset”.
+\end{enumerate}
+
+\subsection{Server Stub (Skeleton)}
+The server stub runs on the remote machine and acts as a dispatcher. It listens for incoming requests, unpacks them, calls the actual business logic, and sends back the result.
+
+\begin{enumerate}
+    \item \textbf{Listening}: Binds to a network port and accepts incoming RPC requests. May use HTTP/2, raw TCP, or custom transports.  
+        \textit{Example}: A gRPC server listens on `:50051` for HTTP/2 connections.
+
+    \item \textbf{Request receipt}: Reads the inbound byte stream from the transport.  
+        \textit{Details}: The stub may read headers and trailers (e.g., in HTTP/2) to extract metadata.
+
+    \item \textbf{Unmarshaling}: Decodes the parameters from the byte stream into the local representation (e.g., a Protobuf message struct).  
+        \textit{Example}: A byte stream becomes a `LoginRequest` object with `username` and `password` fields.
+
+    \item \textbf{Invocation}: Calls the actual server implementation (the user-provided function) with the unmarshaled parameters.  
+        \textit{Example}: `authImpl.Login(ctx, request)` is invoked. The stub passes the context (which includes deadlines and cancellation).
+
+    \item \textbf{Result marshaling}: Encodes the return values and any out-parameters into a byte stream.  
+        \textit{Example}: A `LoginResponse{success: true}` becomes a sequence of bytes.
+
+    \item \textbf{Response sending}: Transmits the marshaled result back to the client, possibly along with trailing metadata.  
+        \textit{Example}: The byte stream is sent over the same HTTP/2 stream.
+
+    \item \textbf{Error handling}: If the user function panics or returns an error, the server stub marshals an error response (e.g., a gRPC status with code `INTERNAL` or `INVALID\_ARGUMENT`).  
+        \textit{Example}: A missing required parameter results in a `INVALID\_ARGUMENT` error sent back to the client.
+\end{enumerate}
+
+\subsection{Code Generation and Tooling}
+In modern RPC systems (like gRPC and Thrift), these stubs are automatically generated by a compiler (e.g., `protoc` for gRPC). The developer writes the IDL file, runs the generator, and the stubs are produced in the target language. This process:
+\begin{itemize}
+    \item \textbf{Eliminates boilerplate}: No manual serialisation or networking code.
+    \item \textbf{Ensures type safety}: The compiler checks that the client and server use the same interface.
+    \item \textbf{Enables cross-language interoperability}: One IDL can generate stubs for Go, Java, Python, C++, etc.
+\end{itemize}
+
+\section{Serialization and Deserialization}
+Serialization (marshaling) is the process of converting \textbf{data structures or objects} into a linear byte stream suitable for network transmission. Deserialization is the reverse process. The choice of serialization format affects performance, interoperability, security, and human readability.
+
+\subsection{Deep Dive into Serialization Formats}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{3.5cm}p{2.5cm}p{7cm}}
+\toprule
+\textbf{Format} & \textbf{Type} & \textbf{Characteristics} \\
+\midrule
+Protocol Buffers & Binary & Compact (3-10× smaller than JSON), fast, schema-based (`.proto`), supports evolution, used by gRPC. \\
+JSON & Text & Human-readable, language-agnostic, slower (parsing overhead), larger payload, no schema by default. \\
+XML & Text & Very verbose, widely supported in legacy systems, schema (XSD) optional, slow. \\
+MessagePack & Binary & Similar to JSON but binary, smaller than JSON, no schema, good for scripting. \\
+Avro & Binary/JSON & Schema evolution, used in Apache Kafka, dynamic typing. \\
+Thrift & Binary/JSON/Compact & Supports multiple serialization modes, used by Apache Thrift. \\
+CBOR & Binary & Based on JSON, compact, used in COSE (IoT). \\
+\bottomrule
+\end{tabular}
+\caption{Common Serialization Formats}
+\end{table}
+
+\subsection{Schema Evolution - Why It Matters}
+One of the most critical features for long-running distributed systems is \textbf{schema evolution}. In a microservice architecture, you cannot upgrade all clients and servers simultaneously. Different versions must coexist. Schema evolution allows you to change your data structures without breaking old clients.
+
+\subsubsection{Rules for Safe Evolution (Protobuf Example)}
+\begin{itemize}
+    \item \textbf{Field numbers are forever}: Each field has a unique number. Never change the meaning of a field number. When removing a field, mark the number as `reserved` to prevent reuse.
+    \item \textbf{Adding new fields is safe} as long as they are optional (or have a sensible default). Old clients ignore unknown fields.
+    \item \textbf{Removing fields is safe} but you must `reserve` the number. Old clients that still send that field will have it ignored by new servers (if they are compiled to ignore unknown fields).
+    \item \textbf{Changing field types is dangerous}: Only changes that preserve wire format are allowed (e.g., `int32` → `int64` on some platforms, `string` $\leftrightarrow$ `bytes`). Most type changes break compatibility.
+    \item \textbf{Renaming fields is allowed} because the wire format uses field numbers, not names.
+\end{itemize}
+
+\subsubsection{Example of Evolution}
+Original `.proto`:
+\begin{lstlisting}
+message User {
+  string name = 1;
+  int32 age = 2;
+}
+\end{lstlisting}
+New version (add email as optional):
+\begin{lstlisting}
+message User {
+  string name = 1;
+  int32 age = 2;
+  optional string email = 3;  // new field
+}
+\end{lstlisting}
+Old clients still send only `name` and `age`; new servers accept the message and set `email` to empty. New clients may send all three; old servers ignore `email` (if compiled with unknown field preservation). This works.
+
+\subsection{Performance Considerations}
+\begin{itemize}
+    \item \textbf{Binary formats} (Protobuf, Thrift, MessagePack) are significantly faster to parse and produce smaller messages than text formats. For high-throughput microservices, binary serialization is preferred.
+    \item \textbf{Text formats} (JSON, XML) are slower, larger, but human-readable. They are suitable for debugging, administrative APIs, and when the client is a browser.
+    \item \textbf{Zero-copy formats} (Cap’n Proto, FlatBuffers) allow direct memory access without parsing. They are extremely fast but more complex.
+\end{itemize}
+
+\section{Interface Definition Language (IDL)}
+IDL is a \textbf{language-neutral description} of the service interface: the functions, parameter types, and return types. From the IDL file, tools automatically generate client and server stubs in various programming languages. This is the contract between the client and server.
+
+\subsection{Why IDL is Important}
+\begin{itemize}
+    \item \textbf{Contract enforcement}: Both sides agree on the exact interface. Changes are reviewed via the IDL.
+    \item \textbf{Documentation}: The IDL serves as up-to-date documentation (unlike manually written docs that may drift).
+    \item \textbf{Code generation}: Saves thousands of lines of boilerplate code.
+    \item \textbf{Cross-language support}: A single IDL can generate stubs for Go, Java, Python, C++, Rust, etc.
+\end{itemize}
+
+\subsection{Examples of IDLs}
+
+\subsubsection{Protocol Buffers (`.proto`)} - gRPC
+\begin{lstlisting}
+syntax = "proto3";
+
+package auth;
+
+service AuthService {
+  rpc Login(LoginRequest) returns (LoginResponse);
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  bool success = 1;
+}
+\end{lstlisting}
+\textit{Features}: `message`, `service`, `rpc`, `enum`, `oneof`, `map`, `reserved`.
+
+\subsubsection{Thrift IDL}
+\begin{lstlisting}
+namespace go auth
+
+struct LoginRequest {
+  1: string username,
+  2: string password
+}
+
+struct LoginResponse {
+  1: bool success
+}
+
+service AuthService {
+  LoginResponse Login(1: LoginRequest req)
+}
+\end{lstlisting}
+\textit{Features}: `struct`, `service`, `exception`, `typedef`, `enum`.
+
+\subsubsection{WSDL (XML)} - SOAP
+WSDL is an XML document describing a web service. It defines operations, messages, bindings, and endpoints. Very verbose but toolable. Example snippet:
+\begin{verbatim}
+<message name="LoginRequest">
+  <part name="username" type="xsd:string"/>
+  <part name="password" type="xsd:string"/>
+</message>
+<operation name="Login">
+  <input message="tns:LoginRequest"/>
+  <output message="tns:LoginResponse"/>
+</operation>
+\end{verbatim}
+
+\subsubsection{OpenAPI (Swagger)} - REST (can describe RPC-like APIs)
+\begin{lstlisting}
+openapi: 3.0.0
+paths:
+  /login:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username: {type: string}
+                password: {type: string}
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+\end{lstlisting}
+
+\subsection{Example: Generating Stubs from `auth.proto`}
+Using the `protoc` compiler:
+\begin{verbatim}
+protoc --go\_out=. --go-grpc\_out=. auth.proto
+\end{verbatim}
+This generates:
+\begin{itemize}
+    \item `auth.pb.go` - Protobuf message types.
+    \item `auth\_grpc.pb.go` - gRPC client and server interfaces.
+\end{itemize}
+The developer then implements the server interface:
+\begin{lstlisting}[language=Go]
+type authServer struct {
+    pb.UnimplementedAuthServiceServer
+}
+
+func (s *authServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
+    // business logic
+    return &pb.LoginResponse{Success: true}, nil
+}
+\end{lstlisting}
+The client stub is used as:
+\begin{lstlisting}[language=Go]
+conn, \_ := grpc.Dial(addr, grpc.WithInsecure())
+client := pb.NewAuthServiceClient(conn)
+resp, \_ := client.Login(ctx, &pb.LoginRequest{Username: "alice", Password: "123"})
+\end{lstlisting}
+Notice how the generated stubs provide a clean, type-safe interface.
+
+\subsection{Best Practices for IDL Design}
+\begin{itemize}
+    \item \textbf{Use semantic field names}: `user\_id` not `f1`.
+    \item \textbf{Reserve field numbers for future use}: Prevent reuse of deleted fields.
+    \item \textbf{Keep messages small and focused}: Decompose large structures into smaller ones.
+    \item \textbf{Use `oneof` for mutually exclusive fields}: Avoids having to check multiple fields.
+    \item \textbf{Document the IDL}: Comments in the IDL file become part of the generated documentation.
+    \item \textbf{Version your IDL files}: Put them in version control; treat changes like code changes (code review, testing).
+\end{itemize}
+
+\subsection{IDL vs. No IDL (e.g., JSON-RPC)}
+JSON-RPC has no mandatory IDL. You document the API manually. This is simpler for small projects but leads to:
+\begin{itemize}
+    \item \textbf{Manual mismatches}: The client and server can drift without the compiler catching errors.
+    \item \textbf{No type safety}: You must handle missing fields, wrong types at runtime.
+    \item \textbf{Poor tooling}: No code generation, no stub generation, no compile-time checks.
+\end{itemize}
+For large, long-lived systems, an IDL is highly recommended. For quick scripts or internal tools, JSON-RPC’s simplicity may outweigh the benefits of an IDL.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Common RPC Errors - Exhaustive Taxonomy}
+RPC introduces failure modes that do not exist in local calls. Understanding them is crucial for building robust distributed systems. We classify errors into six categories, each with specific causes, examples, and mitigation strategies.
+
+\subsection{1. Network Errors}
+Network errors occur when the underlying communication channel fails. They are among the most common failures in distributed systems.
+
+\begin{itemize}
+    \item \textbf{Connection refused}: The server process is not listening on the specified port.  
+        \textit{Example}: The server has crashed or not yet started.  
+        \textit{Mitigation}: Retry with exponential backoff, use health checks, and ensure the server is registered with service discovery.
+    
+    \item \textbf{Connection timeout}: The TCP handshake or data transfer times out due to network congestion, firewall, or overloaded server.  
+        \textit{Example}: A misconfigured firewall drops SYN packets.  
+        \textit{Mitigation}: Reduce the connection timeout, use circuit breakers, and ensure network policies allow the traffic.
+    
+    \item \textbf{DNS resolution failure}: Hostname cannot be resolved to an IP address.  
+        \textit{Example}: The DNS server is unreachable or the hostname is misspelled.  
+        \textit{Mitigation}: Use IP addresses for critical services, implement DNS caching, and have fallback endpoints.
+    
+    \item \textbf{Packet loss (UDP-based RPC)}: Requests or replies are lost; no automatic retransmission.  
+        \textit{Example}: A noisy network line corrupts UDP datagrams.  
+        \textit{Mitigation}: Use TCP instead of UDP, or implement application-level acknowledgements and retransmission.
+    
+    \item \textbf{Network partition}: Complete loss of connectivity between client and server (e.g., cable cut, switch failure).  
+        \textit{Example}: A data centre link is accidentally unplugged.  
+        \textit{Mitigation}: Deploy redundant network paths, use multi-region replication, and design for eventual consistency.
+\end{itemize}
+
+\subsection{2. Protocol Errors}
+Protocol errors arise when the client and server do not speak the same language or the message is corrupted.
+
+\begin{itemize}
+    \item \textbf{Protocol version mismatch}: Client and server use different versions of the RPC protocol (e.g., gRPC over HTTP/2 vs. an older custom protocol).  
+        \textit{Example}: Upgrading the server to a new major version without updating clients.  
+        \textit{Mitigation}: Use version negotiation, backward-compatible protocol evolution, or separate endpoints for different versions.
+    
+    \item \textbf{Malformed message}: The byte stream does not conform to the expected format (e.g., missing required field, invalid length prefix, premature EOF).  
+        \textit{Example}: A buggy client sends a truncated Protobuf message.  
+        \textit{Mitigation}: Validate messages on arrival, return clear error codes (e.g., gRPC `INVALID\_ARGUMENT`), and log the offending data.
+    
+    \item \textbf{Serialization error}: Type mismatch or unknown field in strict mode (e.g., JSON field missing a required property, or an integer where a string is expected).  
+        \textit{Example}: The server expects a `timestamp` field but the client omits it.  
+        \textit{Mitigation}: Use schema evolution (optional fields, defaults), and avoid strict mode in production.
+\end{itemize}
+
+\subsection{3. Timeout Errors}
+A timeout occurs when the client does not receive a response within a specified deadline. Timeouts are a critical tool for preventing cascading failures.
+
+\begin{itemize}
+    \item \textbf{Client timeout}: The client sets a deadline (e.g., 5 seconds). If the server does not reply within that time, the client raises a timeout error. However, the server may still execute the request after the deadline (orphaned request).  
+        \textit{Example}: A database query takes 10 seconds, but the client times out after 2 seconds. The query completes later, wasting resources.  
+        \textit{Mitigation}: Set deadlines based on the 99th percentile latency; use idempotent operations so orphaned requests are harmless; implement request cancellation propagation.
+    
+    \item \textbf{Server timeout}: The server itself may have a deadline and abort processing if the request takes too long.  
+        \textit{Example}: A server uses a 30-second timeout for a file upload; if exceeded, it closes the connection.  
+        \textit{Mitigation}: Coordinate deadlines between client and server (propagate the client’s deadline via metadata).
+\end{itemize}
+
+\subsection{4. Server Failures}
+Server failures range from crashes to overload conditions. They are unavoidable, but their impact can be minimised.
+
+\begin{itemize}
+    \item \textbf{Crash before execution}: The server dies before any processing; the client never receives a response.  
+        \textit{Example}: The server process is killed by an OOM killer.  
+        \textit{Mitigation}: The client can safely retry because no state was changed. Use health checks to route away from unhealthy instances.
+    
+    \item \textbf{Crash during execution}: The server may have partially applied changes (e.g., updated a database but did not commit). At-most-once semantics require the client to know whether the operation succeeded.  
+        \textit{Example}: A bank transfer partially deducts from account A but crashes before crediting B.  
+        \textit{Mitigation}: Use idempotent operations, distributed transactions, or sagas.
+    
+    \item \textbf{Crash after execution but before reply}: The operation succeeded, but the client never receives the reply. Retrying would duplicate the operation (if non-idempotent).  
+        \textit{Example}: An email is sent, but the server crashes before sending the HTTP 200 OK.  
+        \textit{Mitigation}: Use idempotency keys, or design operations to be idempotent (e.g., `sendEmail` with a unique `requestId`).
+    
+    \item \textbf{Load shedding / throttling}: The server rejects the request because it is overloaded (e.g., returns gRPC `RESOURCE\_EXHAUSTED`, HTTP 429, or a custom “busy” error).  
+        \textit{Example}: A server has a maximum concurrency of 100; the 101st request is rejected.  
+        \textit{Mitigation}: Client-side backoff (exponential backoff with jitter), circuit breakers, and load balancing across many replicas.
+\end{itemize}
+
+\subsection{5. Semantic Errors}
+Semantic errors are logical mistakes in how requests are handled, often due to assumptions about ordering, uniqueness, or side effects.
+
+\begin{itemize}
+    \item \textbf{Idempotency violation}: A non-idempotent operation retried leads to duplicate records, double charges, etc.  
+        \textit{Example}: A `POST /payment` that does not check for duplicate requests will charge the user twice if the client retries due to a timeout.  
+        \textit{Mitigation}: Design operations to be idempotent (e.g., use PUT with a resource ID), or use idempotency keys.
+    
+    \item \textbf{Ordering violation}: Requests may arrive out of order due to retries or network delays.  
+        \textit{Example}: “Add item” arrives before “Create cart” because the latter was retried.  
+        \textit{Mitigation}: Use sequence numbers, causal ordering, or design operations to be commutative (order-independent).
+    
+    \item \textbf{Partial failure (ambiguous outcome)}: The client does not know whether the server executed the request. This is the hardest semantic error.  
+        \textit{Example}: A `Transfer` RPC times out; the server might have completed the transfer, or might not have.  
+        \textit{Mitigation}: Use idempotency keys, transaction IDs, and design for “at-most-once” semantics with idempotent operations.
+\end{itemize}
+
+\subsection{6. Security Errors}
+Security errors stem from insufficient protection of the RPC channel or credentials.
+
+\begin{itemize}
+    \item \textbf{Authentication failed}: Invalid credentials, expired token, missing TLS client certificate.  
+        \textit{Example}: An API key is revoked but the client still uses it.  
+        \textit{Mitigation}: Implement token refresh, mutual TLS (mTLS), and return clear authentication errors.
+    
+    \item \textbf{Authorization denied}: The principal is authenticated but lacks permission to call the method.  
+        \textit{Example}: A regular user tries to call an admin-only RPC.  
+        \textit{Mitigation}: Use role-based access control (RBAC), and return `PERMISSION\_DENIED`.
+    
+    \item \textbf{Encryption errors}: TLS handshake failure, certificate mismatch, unsupported cipher suite.  
+        \textit{Example}: The server certificate has expired.  
+        \textit{Mitigation}: Automate certificate renewal (e.g., cert-manager), use trusted CAs, and avoid insecure cipher suites.
+    
+    \item \textbf{Man-in-the-middle attack}: No encryption or compromised certificate allows an attacker to eavesdrop or modify traffic.  
+        \textit{Example}: A public Wi-Fi hotspot injects malicious responses.  
+        \textit{Mitigation}: Always use TLS in production, pin certificates for critical services, and validate server identity.
+\end{itemize}
+
+\section{Comparison of RPC and REST}
+
+REST (Representational State Transfer) is an architectural style for designing networked applications, often using HTTP. The following table contrasts RPC with REST across many dimensions. Below the table, we provide a deep analysis of each criterion.
+
+\begin{longtable}{|p{3.5cm}|p{5cm}|p{5cm}|}
+\hline
+\textbf{Criteria} & \textbf{RPC} & \textbf{REST} \\
+\hline
+Abstraction & Procedure call (action/verb) & Resource manipulation (nouns) \\
+HTTP methods & Usually POST (or GET for idempotent) & GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS \\
+URI design & `/procedureName` or `/service/method` & `/resources/{id}` or `/resources` \\
+Idempotency & Not guaranteed; depends on method implementation & GET, PUT, DELETE are idempotent by HTTP specification \\
+Caching & No inherent support; custom headers & Built-in via `Cache-Control`, `ETag`, `Last-Modified` \\
+Error handling & Application-specific error codes (e.g., `1001`, `1002`) & HTTP status codes (2xx, 3xx, 4xx, 5xx) \\
+Tooling & Code generation from IDL (stubs) & OpenAPI/Swagger, but often manual \\
+Streaming & Native in gRPC (bidirectional) & Requires WebSockets or Server-Sent Events (SSE) \\
+Performance & Very high (binary, HTTP/2 multiplexing) & Medium (JSON/XML over HTTP/1.1) \\
+Discoverability & Low (need IDL or documentation) & High (HATEOAS, hypermedia links) \\
+Statefulness & Can be stateful (session cookies, connection affinity) & Stateless by design (each request contains all information) \\
+Payload size & Small (binary) & Larger (text) \\
+Human-readability & Poor (binary) & Excellent (JSON/XML) \\
+\hline
+\caption{RPC vs REST - comprehensive comparison}
+\label{tab:rpc_rest}
+\end{longtable}
+
+\subsection{Detailed Analysis of Each Criterion}
+
+\subsubsection{Abstraction}
+RPC models the system as a set of procedures or methods. Clients call these procedures, passing arguments and receiving results. This is natural for action-oriented tasks (e.g., `computeTax`, `sendEmail`).  
+REST models the system as a set of resources (nouns) and a fixed set of operations (HTTP verbs). This is natural for CRUD applications (e.g., `GET /customers/123`, `POST /orders`).
+
+\subsubsection{HTTP Methods}
+RPC typically uses POST for all actions (though some use GET for idempotent queries). REST uses the full spectrum of HTTP methods, each with well-defined semantics (GET is safe, PUT is idempotent, etc.). This makes REST APIs more self-descriptive.
+
+\subsubsection{Idempotency}
+In REST, GET, PUT, DELETE are idempotent by specification. In RPC, idempotency is not automatic; the developer must ensure that repeated calls have the same effect. For example, a `createAccount` RPC is not idempotent unless it uses an idempotency key.
+
+\subsubsection{Caching}
+REST leverages HTTP caching headers, allowing intermediaries (CDNs, proxies) to cache responses. This can drastically reduce server load. RPC has no built-in caching mechanism; you must implement it manually (e.g., using Redis or a custom cache layer).
+
+\subsubsection{Error Handling}
+REST uses standard HTTP status codes (200, 400, 404, 500, etc.), which are well understood. RPC often uses application-specific error codes or gRPC’s rich status codes (which are an improvement over plain numeric codes). However, gRPC codes are not as widely recognised outside the gRPC ecosystem.
+
+\subsubsection{Tooling}
+RPC frameworks like gRPC and Thrift generate client and server stubs from an IDL. This provides type safety and reduces boilerplate. REST APIs are often described with OpenAPI (Swagger), but the tooling is less integrated; you still write a lot of manual HTTP handling.
+
+\subsubsection{Streaming}
+RPC (specifically gRPC) natively supports bidirectional streaming over a single HTTP/2 connection. REST does not support streaming; to achieve similar effects, you need WebSockets or Server-Sent Events (SSE), which are separate protocols.
+
+\subsubsection{Performance}
+gRPC (binary + HTTP/2) is significantly faster than REST over HTTP/1.1 (text + per-request connections). For high-throughput systems, gRPC is the clear winner. However, for many applications, REST performance is “good enough”.
+
+\subsubsection{Discoverability}
+REST with HATEOAS (Hypermedia as the Engine of Application State) provides discoverable APIs: clients can navigate by following links. RPC APIs require external documentation (e.g., a `.proto` file) or a service reflection mechanism.
+
+\subsubsection{Statefulness}
+REST is stateless by design: each request contains all the information needed to process it. This simplifies scaling and fault tolerance. RPC can be stateful (e.g., using session cookies or connection affinity), but that adds complexity and reduces scalability.
+
+\subsubsection{Human-readability}
+REST messages are usually JSON or XML, which are text-based and easy to inspect with `curl` or browser dev tools. gRPC’s binary Protobuf messages are not human-readable; you need tools like `grpcurl` or `protoc` to decode them.
+
+\subsection{When to Choose Which?}
+Based on the analysis above, here are concrete guidelines.
+
+\begin{itemize}
+    \item \textbf{Choose RPC (especially gRPC)} for:
+        \begin{itemize}
+            \item \textbf{Internal microservices} with high performance requirements (low latency, high throughput).
+            \item \textbf{Streaming} (real-time updates, chat, live data feeds).
+            \item \textbf{Polyglot environments} where strong type safety and code generation are beneficial.
+            \item \textbf{Mobile backends} where small message size saves battery and bandwidth.
+            \item \textbf{Systems that need deadlines, flow control, and advanced load balancing} out of the box.
+        \end{itemize}
+    \item \textbf{Choose REST} for:
+        \begin{itemize}
+            \item \textbf{Public APIs} that must be accessible to many different clients (browsers, mobile apps, third-party developers).
+            \item \textbf{CRUD-oriented applications} where resources map naturally to URLs.
+            \item \textbf{When caching is critical} (HTTP caching reduces server load and latency).
+            \item \textbf{When the team has deep HTTP expertise} and no RPC experience.
+            \item \textbf{When you need HATEOAS} or hypermedia discoverability.
+            \item \textbf{When debugging and human-readability are paramount} (e.g., during development or for administrative APIs).
+        \end{itemize}
+\end{itemize}
+
+In many modern systems, a hybrid approach is common: use gRPC for internal service-to-service communication, and expose a REST API (with Swagger) for external clients. This gives the best of both worlds.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Comparison of Popular RPC Technologies}
+
+We compare three widely used RPC technologies: \textbf{gRPC}, \textbf{JSON-RPC}, and \textbf{XML-RPC}. Additionally, we briefly mention Apache Thrift, Cap’n Proto, and SOAP. The goal is to give you not just a list of features, but a deep understanding of when and why each technology shines, along with their trade-offs.
+
+\subsection{gRPC - Deep Dive}
+gRPC is a modern, high-performance RPC framework originally developed by Google and now maintained by the Cloud Native Computing Foundation (CNCF). It is designed for low-latency, high-throughput distributed systems.
+
+\subsubsection{Protocol Buffers (Protobuf) - The Engine}
+\begin{itemize}
+    \item \textbf{Binary serialisation}: Unlike JSON or XML, Protobuf encodes data in a compact binary format. A typical message is 3-10× smaller than its JSON equivalent, saving network bandwidth and memory.
+    \item \textbf{Schema evolution}: You can add new fields without breaking old clients. Field numbers (not names) identify fields, and unknown fields are ignored by default.
+    \item \textbf{Code generation}: The `.proto` file is compiled into client and server stubs in many languages. This eliminates manual marshaling and ensures type safety at compile time.
+\end{itemize}
+
+\subsubsection{HTTP/2 - The Transport}
+\begin{itemize}
+    \item \textbf{Multiplexing}: A single TCP connection can carry many concurrent RPC calls. No need for multiple connections or connection pooling.
+    \item \textbf{Bidirectional streaming}: Both client and server can send multiple messages asynchronously over the same stream - ideal for chat, live updates, or large file transfers.
+    \item \textbf{Flow control}: Prevents a fast sender from overwhelming a slow receiver.
+\end{itemize}
+
+\subsubsection{Performance and Benchmarks}
+\begin{itemize}
+    \item gRPC can be up to 10× faster than JSON over HTTP/1.1 (REST) for similar operations, according to public benchmarks.
+    \item The combination of binary serialisation and HTTP/2 multiplexing reduces CPU usage and latency.
+    \item For example, a gRPC call may take 1-2 ms while a REST call might take 10-20 ms for the same logic.
+\end{itemize}
+
+\subsubsection{Built-in Production Features}
+\begin{itemize}
+    \item \textbf{Deadlines and cancellation}: Propagated via context; client can set a timeout, and the server honours it.
+    \item \textbf{Load balancing}: Client-side load balancing (round-robin, pick first) and integration with service discovery (Consul, etcd, Kubernetes).
+    \item \textbf{Authentication}: TLS/SSL, OAuth2, token - pluggable via interceptors.
+    \item \textbf{Interceptors (middleware)}: Easily add logging, metrics, retries, or distributed tracing.
+\end{itemize}
+
+\subsubsection{Limitations of gRPC}
+\begin{itemize}
+    \item \textbf{Browser support}: Native browsers cannot speak gRPC directly; you need a proxy (gRPC-web) or use REST.
+    \item \textbf{Human-readability}: Binary messages are not easy to inspect with `curl` - you need tools like `grpcurl`.
+    \item \textbf{Learning curve}: Understanding Protocol Buffers, HTTP/2, and the code generation workflow takes time.
+\end{itemize}
+
+\subsection{JSON-RPC - Deep Dive}
+JSON-RPC is a lightweight, text-based RPC protocol that uses JSON for encoding. It is deliberately simple and easy to implement.
+
+\subsubsection{Message Format}
+\begin{itemize}
+    \item A request is a JSON object with fields: `jsonrpc`, `method`, `params`, and `id`.
+    \item A response has `jsonrpc`, `result` (or `error`), and `id`.
+    \item Example: `{"jsonrpc":"2.0","method":"add","params":[3,5],"id":1}`.
+\end{itemize}
+
+\subsubsection{Key Features}
+\begin{itemize}
+    \item \textbf{No mandatory IDL}: You document the API manually. Any language that can parse JSON can act as a client or server.
+    \item \textbf{Notifications}: A request without an `id` field does not expect a response - useful for fire-and-forget.
+    \item \textbf{Batch requests}: You can send an array of requests in one HTTP call, reducing round trips.
+    \item \textbf{Human-readable}: You can test with `curl` and inspect logs easily.
+\end{itemize}
+
+\subsubsection{Use Cases}
+\begin{itemize}
+    \item \textbf{Cryptocurrency clients}: Bitcoin Core and many altcoins use JSON-RPC as their main API.
+    \item \textbf{Internal tools and scripts}: When you need a quick RPC without code generation.
+    \item \textbf{Rapid prototyping}: Very low friction.
+\end{itemize}
+
+\subsubsection{Limitations}
+\begin{itemize}
+    \item \textbf{No streaming}: Each request/response is separate. To emulate streaming, you need WebSockets or long polling.
+    \item \textbf{No built-in schema evolution}: Missing fields are just missing; you must handle them manually.
+    \item \textbf{Performance}: JSON parsing is slower than binary, and messages are larger.
+\end{itemize}
+
+\subsection{XML-RPC - Deep Dive}
+XML-RPC is a legacy protocol from the late 1990s that uses XML for encoding. It was a precursor to SOAP.
+
+\subsubsection{Message Structure}
+\begin{itemize}
+    \item A request is an XML document: `<methodCall><methodName>add</methodName><params><param><value><int>3</int></value></param>...</params></methodCall>`.
+    \item Data types: int, boolean, string, double, dateTime.iso8601, base64, struct, array.
+    \item Faults: `<fault><value><struct><member><name>faultCode</name><value><int>4</int></value></member>...</struct></value></fault>`.
+\end{itemize}
+
+\subsubsection{Why It Still Exists}
+\begin{itemize}
+    \item Many legacy systems (e.g., WordPress, some CMS, old enterprise software) still expose XML-RPC APIs.
+    \item Almost every programming language has an XML-RPC library (often dating back 20 years).
+    \item It is simple enough to implement from scratch if needed.
+\end{itemize}
+
+\subsubsection{Limitations}
+\begin{itemize}
+    \item \textbf{Verbosity}: An XML message can be 10-20× larger than its JSON equivalent, and parsing XML is CPU-intensive.
+    \item \textbf{No advanced features}: No streaming, no built-in authentication, no batching.
+    \item \textbf{Obsolete}: Most new projects avoid XML-RPC in favour of JSON-RPC or gRPC.
+\end{itemize}
+
+\subsection{Additional Technologies - Brief Overview}
+
+\subsubsection{Apache Thrift}
+\begin{itemize}
+    \item \textbf{Developed by Facebook} (now Apache). Supports many languages (C++, Java, Python, Go, PHP, etc.).
+    \item \textbf{Flexible transport}: You can choose TCP, HTTP, or even Unix sockets.
+    \item \textbf{Multiple serialisation formats}: binary, compact, JSON.
+    \item Used in large-scale systems like Cassandra, HBase, and Hadoop.
+    \item Compared to gRPC, Thrift offers more transport flexibility but less HTTP/2 integration.
+\end{itemize}
+
+\subsubsection{Cap’n Proto}
+\begin{itemize}
+    \item \textbf{Zero-copy serialisation}: The in-memory representation is the same as the wire format. No encoding/decoding step - just pointer arithmetic.
+    \item \textbf{RPC with promise pipelining}: You can send requests before previous ones finish, similar to futures.
+    \item \textbf{Extremely fast}: Benchmarks show it can be 100-1000× faster than Protobuf for large messages.
+    \item \textbf{Trade-off}: Smaller ecosystem, fewer tools, and less adoption than gRPC.
+\end{itemize}
+
+\subsubsection{SOAP (Simple Object Access Protocol)}
+\begin{itemize}
+    \item \textbf{XML-based enterprise protocol} with heavy specifications (WS-Security, WS-ReliableMessaging).
+    \item \textbf{WSDL (Web Services Description Language)}: An XML-based IDL.
+    \item \textbf{Still widely used} in banking, government, and legacy enterprise systems.
+    \item \textbf{Very heavyweight}: Complex tooling, slow, and difficult to debug.
+\end{itemize}
+
+\subsubsection{Java RMI (Remote Method Invocation)}
+\begin{itemize}
+    \item \textbf{Java-only RPC} using object serialisation.
+    \item No separate IDL - you use Java interfaces.
+    \item Requires an RMI registry for service lookup.
+    \item Prone to versioning issues (Java serialisation is fragile).
+    \item Almost never used in new Java projects today (replaced by gRPC or REST).
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\caption{Detailed Comparison of gRPC, JSON-RPC, and XML-RPC}
+\label{tab:comparison}
+\begin{tabular}{|p{2.8cm}|p{3cm}|p{3cm}|p{3cm}|}
+\hline
+\textbf{Criteria} & \textbf{gRPC} & \textbf{JSON-RPC} & \textbf{XML-RPC} \\
+\hline
+Data format & Protocol Buffers (binary) & JSON (text) & XML (text) \\
+IDL & Required (`.proto`) & Optional & Optional \\
+Multi-language support & Excellent (11+ languages) & Any language with JSON & Any language with XML \\
+Performance & Very high & Medium & Low (very verbose) \\
+Streaming & Yes (bidirectional) & No & No \\
+Ease of implementation & Moderate (code generation) & Easy & Easy \\
+Error handling & Rich status codes & Error object & Fault element \\
+Typical use cases & Microservices, low-latency, real-time & Simple APIs, internal tools, crypto & Legacy systems \\
+HTTP/2 support & Yes & Optional (usually HTTP/1.1) & Optional (usually HTTP/1.1) \\
+Deadlines/Timeouts & Built-in & Must be implemented manually & Must be implemented manually \\
+Flow control & Yes (HTTP/2) & No & No \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Practical Selection Guidelines}
+\begin{itemize}
+    \item \textbf{Start with gRPC if:}
+        \begin{itemize}
+            \item You control both client and server (internal microservices).
+            \item You need high performance, low latency, or streaming.
+            \item You want strong type safety and contract-first development.
+        \end{itemize}
+    \item \textbf{Use JSON-RPC if:}
+        \begin{itemize}
+            \item You need a simple RPC for a small script or internal tool.
+            \item Human-readability and easy debugging are paramount.
+            \item You do not want to learn an IDL or code generation.
+        \end{itemize}
+    \item \textbf{Avoid XML-RPC for new projects} - use JSON-RPC or gRPC instead.
+    \item \textbf{Consider Thrift if you need custom transports} (e.g., raw TCP) and many languages.
+    \item \textbf{Consider Cap’n Proto only for extreme performance needs} (e.g., HFT, in-memory databases).
+\end{itemize}
+
+This detailed comparison should give you the confidence to choose the right RPC technology for your distributed system.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Use Case Scenarios - Detailed Recommendations}
+
+Choosing the right RPC technology (or REST) depends on many factors: performance requirements, team expertise, network environment, need for streaming, and long-term maintainability. The following table provides a high-level overview, but the subsections below explain each scenario in depth.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|p{4.5cm}|p{4cm}|p{5cm}|}
+\hline
+\textbf{Use Case} & \textbf{Recommended Technology} & \textbf{Reason} \\
+\hline
+High-performance microservices (low latency, high throughput) & gRPC & Binary protocol, HTTP/2 multiplexing, streaming, load balancing. \\
+Browser-to-server API (public) & REST (or JSON-RPC) & Simple JSON, easy debugging, caching, wide browser support. \\
+Real-time streaming (chat, logs, push notifications) & gRPC (bidirectional streaming) & Native streaming, low overhead, built-in flow control. \\
+Simple script calling a remote function (internal) & JSON-RPC & Lightweight, human-readable, no code generation, easy to test with `curl`. \\
+Legacy enterprise integration & XML-RPC (or SOAP) & Existing infrastructure, interoperability with old systems. \\
+Mobile client backend (bandwidth limited) & gRPC + Protobuf & Small message size, low battery usage, efficient. \\
+IoT devices (constrained resources) & gRPC (with HTTP/2) or MQTT & Efficient, but MQTT may be better for extremely constrained devices. \\
+Cross-language systems with custom transport & Apache Thrift & Supports many languages and serialisation formats, flexible transport. \\
+Zero-copy, ultra-high performance & Cap’n Proto & No serialisation overhead, direct memory access. \\
+\hline
+\end{tabular}
+\caption{Technology Recommendations by Use Case}
+\end{table}
+
+\subsection{High-performance Microservices}
+\textbf{When you have dozens or hundreds of small services that communicate frequently.} Example: an e-commerce platform with product service, order service, payment service, etc.
+
+\begin{itemize}
+    \item \textbf{Why gRPC?} 
+        \begin{itemize}
+            \item \textbf{Binary protocol} (Protobuf) messages are 3-10× smaller than JSON, reducing network bandwidth.
+            \item \textbf{HTTP/2 multiplexing} allows many concurrent requests over one TCP connection, eliminating head-of-line blocking.
+            \item \textbf{Client-side load balancing} spreads traffic evenly without a central proxy.
+            \item \textbf{Deadlines and cancellation} propagate automatically, enabling graceful degradation.
+        \end{itemize}
+    \item \textbf{Real-world example}: Google’s internal microservices use gRPC extensively. Netflix uses gRPC for inter-service communication in its video streaming backend.
+\end{itemize}
+
+\subsection{Browser-to-server Public API}
+\textbf{When your API is called directly from web browsers (JavaScript) or mobile apps.} Example: a weather API, a social media API.
+
+\begin{itemize}
+    \item \textbf{Why REST?}
+        \begin{itemize}
+            \item Browsers speak HTTP/1.1 and JSON natively. gRPC requires a proxy (gRPC-web) and is less mature.
+            \item \textbf{Caching} with `Cache-Control` headers reduces server load and latency for read-heavy endpoints.
+            \item \textbf{Idempotent methods} (GET, PUT, DELETE) align well with HTTP semantics.
+            \item \textbf{Statelessness} simplifies scaling and fault tolerance.
+        \end{itemize}
+    \item \textbf{Alternative JSON-RPC}: Some APIs (e.g., Bitcoin Core RPC) use JSON-RPC over HTTP. It is simple but lacks cache semantics.
+\end{itemize}
+
+\subsection{Real-time Streaming}
+\textbf{When data flows continuously from server to client or both directions.} Example: live chat, stock ticker, multiplayer game state sync.
+
+\begin{itemize}
+    \item \textbf{Why gRPC bidirectional streaming?}
+        \begin{itemize}
+            \item One persistent HTTP/2 connection carries many messages in both directions.
+            \item \textbf{Low overhead} - no per-message connection establishment.
+            \item \textbf{Flow control} prevents a slow reader from being overwhelmed.
+            \item \textbf{Cancellation} allows clients to stop receiving messages without tearing down the connection.
+        \end{itemize}
+    \item \textbf{Alternative}: WebSockets with custom RPC framing. This requires more manual work and lacks standardised semantics.
+\end{itemize}
+
+\subsection{Simple Internal Script Calling a Remote Function}
+\textbf{When you need to call a remote procedure from a short shell script or a lightweight automation tool.} Example: a deployment script that calls a restart RPC on a server.
+
+\begin{itemize}
+    \item \textbf{Why JSON-RPC?}
+        \begin{itemize}
+            \item No IDL, no code generation - you can craft the request with `echo '{"jsonrpc":"2.0","method":"restart","params":[],"id":1}'`.
+            \item Test with `curl` - no special libraries.
+            \item Human-readable - easy to debug.
+        \end{itemize}
+    \item \textbf{Note}: For production, you might still want gRPC for type safety. But for ad-hoc scripts, JSON-RPC is perfect.
+\end{itemize}
+
+\subsection{Legacy Enterprise Integration}
+\textbf{When you must communicate with systems built in the 1990s or early 2000s that only support XML-based protocols.} Example: banking mainframes, old CMS systems.
+
+\begin{itemize}
+    \item \textbf{Why XML-RPC or SOAP?}
+        \begin{itemize}
+            \item These systems already have stable XML-RPC or SOAP endpoints.
+            \item Many languages have mature libraries (e.g., `xmlrpc` in Python, `soap` in Java).
+            \item WS-* standards (security, transactions) are only available in SOAP.
+        \end{itemize}
+    \item \textbf{Caution}: Modernising these systems is costly. Use a gateway to translate XML-RPC to JSON/gRPC for new services.
+\end{itemize}
+
+\subsection{Mobile Client Backend}
+\textbf{When the client is a mobile app running on limited battery and cellular data.} Example: a news app, a ride-hailing app.
+
+\begin{itemize}
+    \item \textbf{Why gRPC + Protobuf?}
+        \begin{itemize}
+            \item Small message size reduces data usage (important for users with metered plans).
+            \item Faster parsing saves CPU cycles and extends battery life.
+            \item gRPC supports client-side streaming (e.g., uploading large files in chunks).
+        \end{itemize}
+    \item \textbf{Google’s own mobile apps (e.g., YouTube, Gmail)} use gRPC internally.
+\end{itemize}
+
+\subsection{IoT Devices (Constrained Resources)}
+\textbf{When devices have very limited memory, CPU, and power.} Example: temperature sensors, smart light bulbs.
+
+\begin{itemize}
+    \item \textbf{Why MQTT or CoAP?}
+        \begin{itemize}
+            \item MQTT is designed for low bandwidth and unreliable networks; it uses a publish-subscribe model and tiny packets.
+            \item gRPC (even with HTTP/2) still has overhead that may be too high for 8-bit microcontrollers.
+        \end{itemize}
+    \item \textbf{If you must use RPC}, consider gRPC with Protocol Buffers on more powerful edge gateways, not on the sensors themselves.
+\end{itemize}
+
+\subsection{Cross-language Systems with Custom Transport}
+\textbf{When you need to support many programming languages and have exotic transport requirements (e.g., raw TCP, UDP, Unix sockets).} Example: a distributed database with custom replication protocol.
+
+\begin{itemize}
+    \item \textbf{Why Apache Thrift?}
+        \begin{itemize}
+            \item Supports C++, Java, Python, Go, PHP, Ruby, Erlang, Haskell, etc.
+            \item You can choose the transport (framed, unframed, HTTP) and protocol (binary, compact, JSON) independently.
+            \item Thrift is battle-tested in systems like Cassandra, HBase, and Hadoop.
+        \end{itemize}
+    \item \textbf{Note}: gRPC is also cross-language (11+ languages) but is tied to HTTP/2. Thrift gives you more transport flexibility.
+\end{itemize}
+
+\subsection{Zero-copy, Ultra-high Performance}
+\textbf{When every microsecond counts and you cannot afford serialisation overhead.} Example: high-frequency trading, real-time analytics, in-memory databases.
+
+\begin{itemize}
+    \item \textbf{Why Cap’n Proto?}
+        \begin{itemize}
+            \item The serialisation format is also the in-memory layout. Reading a message requires zero parsing - just pointer arithmetic.
+            \item RPC with promise pipelining allows you to send requests before the previous ones finish.
+            \item Benchmark: Cap’n Proto can be 100-1000× faster than Protobuf for large messages.
+        \end{itemize}
+    \item \textbf{Trade-off}: Less tooling, smaller ecosystem, and not as widely adopted as gRPC.
+\end{itemize}
+
+\section{Advanced Topics in RPC}
+
+\subsection{Idempotency and Exactly-Once Semantics}
+
+\subsubsection{Definition and Importance}
+Idempotency means that performing an operation multiple times has the same effect as performing it once. In distributed systems, idempotency is essential because network failures can cause clients to retry requests without knowing whether the server executed them.
+
+\subsubsection{Examples of Idempotent Operations}
+\begin{itemize}
+    \item \texttt{GET /user/123}: Reading data never changes state → idempotent.
+    \item \texttt{PUT /user/123 \{name:"Alice"\}}: Setting the same value multiple times yields the same final state → idempotent.
+    \item \texttt{DELETE /user/123}: Deleting a non-existent user is harmless → idempotent.
+\end{itemize}
+
+\subsubsection{Non-Idempotent Operations}
+\begin{itemize}
+    \item \texttt{POST /transfer}: Transferring \$10 from account A to B - doing it twice transfers \$20.
+    \item \texttt{POST /increment}: Incrementing a counter - each call increases the value.
+\end{itemize}
+
+\subsubsection{Mitigation Strategies}
+\begin{itemize}
+    \item \textbf{Idempotency keys}: Client generates a unique key for each request. Server stores the key and the outcome. If the same key arrives again, the server returns the cached response without re-executing.
+    \item \textbf{Design for idempotency}: Use PUT instead of POST for updates, or make each operation reversible (e.g., `transfer` uses a transaction ID, and repeating the same ID is ignored).
+\end{itemize}
+
+\subsubsection{Exactly-Once Semantics}
+Achieving exactly-once is extremely hard and often overkill. It requires:
+\begin{itemize}
+    \item A distributed consensus protocol (Paxos, Raft) to agree on which requests have been processed.
+    \item Persistent storage of request outcomes.
+    \item Transactions that span the network and the storage layer.
+\end{itemize}
+In practice, most systems use \textbf{at-most-once} (gRPC default) with idempotent operations, or \textbf{at-least-once} with deduplication.
+
+\subsection{Timeouts and Deadlines}
+
+\subsubsection{Why Deadlines are Critical}
+Without a deadline, a client could wait forever for a response from a crashed or slow server. This leads to:
+\begin{itemize}
+    \item Thread exhaustion (each stuck request consumes a thread).
+    \item Resource leaks (open connections, memory buffers).
+    \item Cascading failures (a downstream timeout can block upstream services).
+\end{itemize}
+
+\subsubsection{How gRPC Implements Deadlines}
+In gRPC, you pass a `context` with a deadline:
+\begin{lstlisting}[language=Go]
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+resp, err := client.Login(ctx, &req)
+\end{lstlisting}
+The deadline propagates through the entire call chain. If the server does not respond in time, the client receives a `DeadlineExceeded` error.
+
+\subsubsection{Choosing a Deadline}
+\begin{itemize}
+    \item Too short → false positives (the server would have succeeded given more time).
+    \item Too long → clients wait unnecessarily, increasing tail latency.
+    \item Typical rule: measure the 99th percentile latency and set the deadline to 2-3× that value.
+\end{itemize}
+
+\subsection{Security in RPC}
+
+\subsubsection{Encryption (TLS/SSL)}
+All production RPC should use TLS to prevent eavesdropping and man-in-the-middle attacks. gRPC integrates with TLS via `credentials.NewTLS()`.
+
+\subsubsection{Authentication and Authorisation}
+\begin{itemize}
+    \item \textbf{mTLS (Mutual TLS)}: Both client and server present certificates. Common in service meshes (Istio, Linkerd).
+    \item \textbf{OAuth2 / JWT tokens}: Stateless tokens that carry claims (e.g., user ID, roles). gRPC supports token-based authentication via interceptors.
+    \item \textbf{API keys}: Simpler but less secure; used for internal services.
+\end{itemize}
+
+\subsubsection{JSON-RPC and XML-RPC Security}
+These can be secured by running over HTTPS (HTTP + TLS). Authentication is usually implemented at the application level (e.g., a `token` field in the JSON request).
+
+\subsubsection{Common Pitfalls}
+\begin{itemize}
+    \item Disabling certificate verification (`insecure` mode) in production - never do this.
+    \item Not rotating certificates - set up automatic renewal (e.g., cert-manager in Kubernetes).
+    \item Logging sensitive data - avoid logging passwords or tokens.
+\end{itemize}
+
+\subsection{Load Balancing and Service Discovery}
+
+\subsubsection{Why Load Balancing is Needed}
+When you have multiple instances of a service (for scalability or fault tolerance), clients should distribute requests evenly. Otherwise, a single instance becomes overloaded while others are idle.
+
+\subsubsection{Client-Side vs Proxy-Side Load Balancing}
+\begin{itemize}
+    \item \textbf{Client-side (gRPC)}: The client knows all server addresses and picks one (round-robin, least loaded). Benefits: no extra hop, lower latency.
+    \item \textbf{Proxy-side (REST, JSON-RPC)}: A reverse proxy (Nginx, HAProxy) receives requests and distributes them. Simpler for REST but adds one network hop.
+\end{itemize}
+
+\subsubsection{Service Discovery}
+Clients need a way to find the current set of server addresses. Solutions:
+\begin{itemize}
+    \item \textbf{DNS}: Round-robin DNS returns multiple IPs. Simple but not instant on failure.
+    \item \textbf{Consul / etcd / Zookeeper}: Centralised registries. Services register themselves, clients watch for changes.
+    \item \textbf{Kubernetes endpoints}: The kube-proxy provides service discovery and load balancing.
+\end{itemize}
+gRPC has pluggable name resolvers that can integrate with Consul, etcd, or custom logic.
+
+\subsection{Protocol Evolution and Backward Compatibility}
+
+\subsubsection{Why Schema Evolution Matters}
+In a distributed system, you cannot upgrade all clients and servers simultaneously. Different versions must coexist. A change to the message format must not break older versions.
+
+\subsubsection{Protobuf Evolution Rules}
+\begin{itemize}
+    \item \textbf{Adding a new field}: Safe if it is optional (or has a default). Old servers ignore unknown fields (by default).
+    \item \textbf{Removing a field}: Mark it `reserved` in the `.proto` file to prevent reuse of the field number. Old clients may still send it; the server should ignore it.
+    \item \textbf{Changing field type}: Not allowed except for compatible cases (e.g., `int32` → `int64` on some platforms).
+    \item \textbf{Changing field name}: Allowed because the wire format uses field numbers, not names.
+\end{itemize}
+
+\subsubsection{JSON-RPC and XML-RPC Evolution}
+These formats have no built-in schema. You must:
+\begin{itemize}
+    \item Add fields that are optional (clients ignore missing fields).
+    \item Never remove a field that old clients might still send; instead, ignore it.
+    \item Use versioning in the URL (e.g., `/v1/rpc`, `/v2/rpc`) for breaking changes.
+\end{itemize}
+
+\subsection{Observability and Distributed Tracing}
+
+\subsubsection{The Three Pillars of Observability}
+\begin{enumerate}
+    \item \textbf{Metrics}: Counters, histograms, gauges. Example: number of RPC calls, latency percentiles, error rate.
+    \item \textbf{Tracing}: Follow a single request across multiple services. Example: OpenTelemetry + Jaeger.
+    \item \textbf{Logging}: Structured logs with correlation IDs. Example: JSON logs with `request\_id`.
+\end{enumerate}
+
+\subsubsection{Correlation IDs}
+A unique ID generated at the entry point (e.g., by the web server) and passed through all subsequent RPC calls via metadata. This allows you to correlate logs from different services.
+
+\subsubsection{Tracing with gRPC}
+gRPC supports interceptors that inject and extract trace context. OpenTelemetry provides gRPC plugins:
+\begin{lstlisting}[language=Go]
+import "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+
+conn, err := grpc.Dial(addr,
+    grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+    grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+)
+\end{lstlisting}
+This automatically adds trace spans for each RPC call.
+
+\subsubsection{Manual Implementation for JSON-RPC / XML-RPC}
+For technologies without built-in observability, you can:
+\begin{itemize}
+    \item Add a `request\_id` field to every request.
+    \item Log the ID in both client and server logs.
+    \item Measure latency manually by timing the round trip.
+\end{itemize}
+However, this is error-prone and less powerful than automatic instrumentation.
+
+\subsection{Conclusion of Advanced Topics}
+Understanding idempotency, deadlines, security, load balancing, schema evolution, and observability is essential for building robust distributed systems. While gRPC provides many of these features out of the box, even REST and JSON-RPC can be used effectively if you apply the same principles manually. The choice of technology should be guided by the specific requirements of your system, not by fashion.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Answers to Analytical Questions}
+
+\subsection{1. Why does RPC make a remote service call appear like a local function call?}
+
+Remote Procedure Call achieves this illusion through the \textbf{client stub} (or proxy). The client stub is a piece of code automatically generated from an Interface Definition Language (IDL). It provides the exact same function signature (name, parameters, return type) as the remote procedure. Internally, the stub performs the following steps transparently:
+
+\begin{enumerate}
+    \item \textbf{Marshaling (Serialization)}: Converts the function arguments into a byte stream that can travel over the network (e.g., using Protocol Buffers, JSON, or XML).
+    \item \textbf{Transport}: Opens a network connection (or reuses a pooled one) and sends the byte stream to the remote server.
+    \item \textbf{Blocking wait}: Suspends the calling thread until a response arrives or a timeout occurs.
+    \item \textbf{Unmarshaling}: Decodes the response byte stream back into the function’s return value (and any out-parameters).
+    \item \textbf{Return}: Gives the result back to the caller, exactly like a local function would.
+\end{enumerate}
+
+From the perspective of the calling code, all these steps are invisible. The developer writes:
+
+\begin{lstlisting}[language=Go]
+// Local call
+result := localAdd(3, 5)
+
+// Remote call (appears identical)
+result := remoteAdd(3, 5)
+\end{lstlisting}
+
+This abstraction is the very essence of RPC. It hides the complexity of distributed programming - socket handling, concurrency, serialization, error recovery - behind a familiar, local-looking interface. This dramatically reduces the cognitive load and allows developers to focus on business logic rather than low-level networking.
+
+\subsection{2. Why can this similarity be dangerous or misleading?}
+
+The abstraction is said to \textbf{leak} - it hides some complexities but not all, and the hidden parts can cause severe problems in production. The following table summarises the key \textit{fallacies of distributed computing} as they apply to RPC.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|p{4cm}|p{9cm}|}
+\hline
+\textbf{Fallacy} & \textbf{Why it is false in RPC} \\
+\hline
+The network is reliable & RPC calls can fail due to packet loss, router crashes, DNS failures, etc. \\
+Latency is zero & Network round-trips take milliseconds to seconds; local calls take nanoseconds. \\
+Bandwidth is infinite & Serialised payloads consume bandwidth; large messages can cause congestion. \\
+The network is secure & RPC needs explicit encryption (TLS) and authentication; plaintext RPC is vulnerable. \\
+Topology doesn’t change & Servers can be added, removed, or fail; clients need service discovery. \\
+There is only one administrator & Firewalls, proxies, and network policies can block RPC traffic. \\
+Transport cost is zero & Connection establishment, TLS handshakes, and marshaling use CPU and memory. \\
+The call is instantaneous & A remote call may block the caller for seconds, causing thread starvation. \\
+\hline
+\end{tabular}
+\caption{Fallacies of distributed computing applied to RPC}
+\end{table}
+
+Consequences of assuming RPC is just like a local call:
+
+\begin{itemize}
+    \item \textbf{Performance bottlenecks}: A developer might call an RPC inside a tight loop (e.g., `for i := 0; i < 1000; i++ { rpc.GetUser(i) }`). Each call adds at least one network round-trip, turning a microsecond operation into a multi-second disaster.
+    \item \textbf{Hanging applications}: If a developer forgets to set a deadline (timeout), a slow or dead server can cause the client to wait indefinitely, exhausting threads and freezing the entire system.
+    \item \textbf{Data corruption from partial failures}: The client may time out, but the server might have already executed the request (e.g., a money transfer). Without idempotency, retrying the call would double-charge the user.
+    \item \textbf{Memory and CPU overhead}: Passing a large data structure (e.g., a 10 MB image) by reference in a local call is cheap. In RPC, the entire structure must be serialised and copied over the network, consuming bandwidth and memory.
+\end{itemize}
+
+This is known as the \textbf{“fallacy of RPC”} - the mistaken belief that remote calls are as reliable, fast, and cheap as local ones. Experienced distributed systems engineers learn to treat every RPC as a potential failure point and design accordingly (timeouts, retries, circuit breakers, idempotency).
+
+\subsection{3. What errors can occur in remote invocations that do not exist in local invocations?}
+
+The following expanded taxonomy categorises errors unique to RPC, along with their causes and typical mitigation strategies.
+
+\subsubsection{3.1 Network Errors}
+\begin{itemize}
+    \item \textbf{Connection refused}: The server process is not listening on the specified port (e.g., not started, crashed, or wrong port). Mitigation: retry with exponential backoff, use health checks.
+    \item \textbf{Connection timeout}: TCP handshake or data transfer times out due to network congestion, firewall, or overloaded server. Mitigation: reduce timeout, use circuit breakers.
+    \item \textbf{DNS resolution failure}: The hostname cannot be resolved to an IP address. Mitigation: use IP addresses or robust DNS caching.
+    \item \textbf{Packet loss (UDP-based RPC)}: Requests or replies are lost; no automatic retransmission. Mitigation: use TCP or implement application-level acknowledgements.
+    \item \textbf{Network partition}: Complete loss of connectivity between client and server (e.g., cable cut, switch failure). Mitigation: use redundant network paths, deploy multiple replicas.
+\end{itemize}
+
+\subsubsection{3.2 Protocol and Marshaling Errors}
+\begin{itemize}
+    \item \textbf{Protocol version mismatch}: Client and server use different versions of the RPC protocol (e.g., gRPC over HTTP/2 vs. HTTP/1.1). Mitigation: version negotiation or backward-compatible upgrades.
+    \item \textbf{Malformed message}: The byte stream does not conform to the expected format (e.g., missing required field in a Protobuf message, invalid JSON). Mitigation: schema validation, graceful error handling.
+    \item \textbf{Serialization error}: Type mismatch (e.g., client sends a string where server expects an integer), or unknown field in strict mode. Mitigation: use schema evolution (optional fields), tolerant reader pattern.
+\end{itemize}
+
+\subsubsection{3.3 Timeout Errors}
+\begin{itemize}
+    \item \textbf{Client timeout}: The client sets a deadline (e.g., 5 seconds). If the server does not reply within that time, the client raises a timeout error. However, the server may still execute the request after the timeout (orphaned request). Mitigation: use idempotent operations and client-side retry budgets.
+    \item \textbf{Server timeout}: The server itself may have a deadline and abort processing if the request takes too long. Mitigation: tune deadlines based on typical processing times.
+\end{itemize}
+
+\subsubsection{3.4 Server Failures}
+\begin{itemize}
+    \item \textbf{Crash before execution}: Server dies before any processing; client can safely retry because no side effects have occurred.
+    \item \textbf{Crash during execution}: Server may have partially applied changes (e.g., updated a database but not sent the reply). At-most-once semantics require the client to know whether the operation was applied. Mitigation: use idempotent operations and transaction IDs.
+    \item \textbf{Crash after execution but before reply}: The operation succeeded, but the client never receives the response. Retrying would duplicate the operation (if non-idempotent). Mitigation: idempotency keys, deduplication logs.
+    \item \textbf{Load shedding / throttling}: Server rejects the request because it is overloaded (e.g., returns gRPC status `RESOURCE\_EXHAUSTED` or HTTP 429). Mitigation: client-side backoff, circuit breakers.
+\end{itemize}
+
+\subsubsection{3.5 Semantic Errors}
+\begin{itemize}
+    \item \textbf{Idempotency violation}: A non-idempotent operation retried leads to duplicate records, double billing, etc. Mitigation: design operations to be idempotent or use request IDs.
+    \item \textbf{Ordering violation}: Requests may arrive out of order due to retries or network delays. Mitigation: sequence numbers, causal ordering protocols.
+    \item \textbf{Partial failure (ambiguous outcome)}: The client does not know whether the server executed the request. This is the hardest error to handle. Mitigation: use idempotency and design for “at-most-once” semantics.
+\end{itemize}
+
+\subsubsection{3.6 Security Errors}
+\begin{itemize}
+    \item \textbf{Authentication failed}: Invalid credentials, expired token, missing client certificate. Mitigation: implement token refresh, mutual TLS.
+    \item \textbf{Authorization denied}: Authenticated but the principal lacks permission to call the method. Mitigation: fine-grained access control, audit logs.
+    \item \textbf{Encryption errors}: TLS handshake failure, certificate mismatch, unsupported cipher suite. Mitigation: use trusted certificates, automated renewal.
+    \item \textbf{Man-in-the-middle attack}: No encryption or compromised certificate. Mitigation: enforce TLS with certificate pinning in critical environments.
+\end{itemize}
+
+\subsection{4. In what situations is gRPC a better choice than REST?}
+
+gRPC is a high-performance RPC framework that uses Protocol Buffers (binary) and HTTP/2. It is not a universal replacement for REST, but it excels in specific scenarios.
+
+\subsubsection{4.1 When Performance and Latency Are Critical}
+\begin{itemize}
+    \item Binary serialisation (Protobuf) produces messages 3-10× smaller than JSON, and parsing is much faster.
+    \item HTTP/2 multiplexing allows many concurrent RPC calls over a single TCP connection, reducing connection overhead.
+    \item Use case: \textbf{High-frequency trading systems} where microseconds matter; \textbf{real-time analytics} pipelines.
+\end{itemize}
+
+\subsubsection{4.2 When You Need Bidirectional Streaming}
+\begin{itemize}
+    \item gRPC supports client-side, server-side, and bidirectional streaming natively over a single HTTP/2 connection.
+    \item Use case: \textbf{Chat applications}, \textbf{live video/audio streaming}, \textbf{real-time dashboard updates}, \textbf{long-running job progress reports}.
+\end{itemize}
+
+\subsubsection{4.3 When Strong Type Safety and Contract-First Development Are Required}
+\begin{itemize}
+    \item The `.proto` file serves as an unambiguous contract between client and server.
+    \item Code generation produces type-safe stubs, eliminating manual marshaling and reducing integration bugs.
+    \item Use case: \textbf{Large microservice ecosystems} with multiple teams; \textbf{polyglot environments} (Go, Java, Python, C++).
+\end{itemize}
+
+\subsubsection{4.4 When You Control Both Client and Server (Internal Microservices)}
+\begin{itemize}
+    \item No need for HTTP caching or browser compatibility.
+    \item You can optimise the network and deploy service discovery.
+    \item Use case: \textbf{Internal backend services} in a data centre or Kubernetes cluster.
+\end{itemize}
+
+\subsubsection{4.5 When You Need Built-in Advanced Features}
+\begin{itemize}
+    \item \textbf{Deadlines (timeouts)}: Propagated automatically via context.
+    \item \textbf{Load balancing}: Client-side round-robin, pick first, etc., with service discovery integration.
+    \item \textbf{Interceptors}: Easy to add logging, metrics, retries, and authentication.
+    \item Use case: \textbf{Production microservices} requiring resilience and observability.
+\end{itemize}
+
+\subsubsection{4.6 When Bandwidth or Battery Is Limited (Mobile/Edge)}
+\begin{itemize}
+    \item Small message size reduces cellular data usage.
+    \item Faster processing saves battery life.
+    \item Use case: \textbf{Mobile app backends}, \textbf{IoT devices}.
+\end{itemize}
+
+\subsection{5. In what situations is REST a simpler or more appropriate choice?}
+
+REST is not just “HTTP with JSON”. It is an architectural style that uses resources and HTTP verbs. It remains superior for many scenarios.
+
+\subsubsection{5.1 When Building Public APIs}
+\begin{itemize}
+    \item REST uses standard HTTP methods (GET, POST, PUT, DELETE) and status codes, which are familiar to all web developers.
+    \item Clients can be written in any language that speaks HTTP - no special libraries or code generation required.
+    \item Use case: \textbf{Public APIs for mobile apps, web frontends, third-party integrations} (e.g., Stripe, GitHub, Twitter).
+\end{itemize}
+
+\subsubsection{5.2 When Caching Is Critical for Performance}
+\begin{itemize}
+    \item REST leverages HTTP caching headers (`Cache-Control`, `ETag`, `Last-Modified`). Responses can be cached by CDNs, reverse proxies, and browsers.
+    \item This reduces server load and latency for read-heavy workloads.
+    \item Example: A `GET /posts/42` response can be cached for 5 minutes, avoiding repeated RPC calls.
+\end{itemize}
+
+\subsubsection{5.3 When Operations Are Naturally Resource-Oriented (CRUD)}
+\begin{itemize}
+    \item REST maps naturally to Create (POST), Read (GET), Update (PUT/PATCH), Delete (DELETE) on resources.
+    \item Example: A blog system has resources like `/posts`, `/users`, `/comments`. The uniform interface simplifies design.
+    \item RPC would require methods like `createPost()`, `getPost()`, `updatePost()`, etc. - more verbose and less discoverable.
+\end{itemize}
+
+\subsubsection{5.4 When the Team Lacks RPC Experience}
+\begin{itemize}
+    \item REST/HTTP is well understood; there is no need to learn Protocol Buffers, gRPC error codes, or streaming APIs.
+    \item Tools like `curl`, browser dev tools, and Postman work out of the box.
+    \item Use case: \textbf{Small teams building simple web services}.
+\end{itemize}
+
+\subsubsection{5.5 When You Need HATEOAS (Hypermedia as the Engine of Application State)}
+\begin{itemize}
+    \item REST can include hyperlinks in responses, allowing clients to discover actions dynamically.
+    \item Example: A response to `GET /order/123` may contain links like `{ "cancel": "/order/123/cancel" }`. The client does not need hard-coded URL construction.
+    \item This decouples clients from server URL structure.
+\end{itemize}
+
+\subsubsection{5.6 When Debugging and Human-Readability Matter}
+\begin{itemize}
+    \item JSON is text-based and easy to inspect, log, and understand.
+    \item Developers can reproduce bugs using `curl` or a browser without installing special tools.
+    \item gRPC’s binary format (Protobuf) is not human-readable; debugging requires tools like `grpcurl`.
+\end{itemize}
+
+\subsection{Summary: gRPC vs REST - Decision Matrix}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|p{5cm}|p{4cm}|p{4cm}|}
+\hline
+\textbf{Requirement} & \textbf{gRPC} & \textbf{REST} \\
+\hline
+Low latency / high throughput & \checkmark Excellent & $\times$ Higher overhead \\
+Bidirectional streaming & \checkmark Native & $\times$ Requires WebSockets \\
+Strong type safety & \checkmark (Protobuf) & $\times$ (OpenAPI optional) \\
+Public API / broad client compatibility & $\times$ (needs gRPC-web) & \checkmark Native \\
+HTTP caching & $\times$ Not inherent & \checkmark Built-in \\
+Human-readable messages & $\times$ Binary & \checkmark JSON \\
+Code generation & \checkmark Automatic & $\times$ Manual (or OpenAPI tools) \\
+Service discovery & \checkmark Pluggable & $\times$ Usually manual (or DNS) \\
+Browser support & $\times$ Requires gRPC-web & \checkmark Native \\
+\hline
+\end{tabular}
+\caption{Decision matrix for choosing between gRPC and REST}
+\end{table}
+
+In practice, many systems use a hybrid approach: \textbf{gRPC for internal microservices} (performance, type safety, streaming) and \textbf{REST for public APIs} (caching, browser compatibility, simplicity). Understanding the strengths and weaknesses of each is essential for modern distributed systems design.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Conclusion}
+Remote Procedure Call (RPC) is one of the most influential abstractions in distributed computing. It allows developers to invoke functions on remote servers as if they were local, hiding the complexity of network communication, serialisation, and concurrency. However, as we have seen throughout this report, this abstraction is not perfect. The so-called \textit{fallacy of RPC} reminds us that remote calls are fundamentally different from local ones: they have higher latency, they can fail in many new ways (network partitions, timeouts, partial failures), and they require careful design regarding idempotency, deadlines, and error handling.
+
+\subsection{Key Takeaways}
+\begin{itemize}
+    \item \textbf{RPC is not a silver bullet.} While it simplifies code for internal microservices, it can lead to hidden performance bottlenecks and resilience issues if used naively.
+    \item \textbf{Choice of technology matters.} gRPC excels in high-throughput, low-latency, streaming scenarios; JSON-RPC is ideal for lightweight, human-debuggable APIs; XML-RPC (and SOAP) are legacy choices but still found in enterprise environments.
+    \item \textbf{Security and observability must be built in.} Modern RPC systems (especially gRPC) provide built-in TLS, authentication, deadlines, and distributed tracing support - features that are essential for production systems.
+    \item \textbf{Schema evolution is a lifesaver.} Using an IDL with binary serialisation (Protobuf, Thrift) allows services to evolve independently without breaking clients, a critical requirement for long-running distributed systems.
+    \item \textbf{REST remains relevant.} For public APIs, CRUD applications, and when caching is paramount, REST is often simpler and more appropriate than RPC.
+\end{itemize}
+\subsection{Practical Guidelines for Choosing an RPC Technology}
+Based on the analysis in this report, here is a decision flowchart in text form:
+
+\begin{verbatim}
+1. Do you need streaming (bidirectional or server push)?
+   - Yes -> gRPC (or WebSockets + custom RPC)
+   - No  -> Continue
+
+2. Do you control both client and server (internal services)?
+   - Yes -> gRPC (strong typing, high performance)
+   - No  -> Continue
+
+3. Is human-readability and ease of debugging critical?
+   - Yes -> JSON-RPC (or REST)
+   - No  -> gRPC or Thrift
+
+4. Are you integrating with legacy systems that only speak XML?
+   - Yes -> XML-RPC or SOAP
+   - No  -> JSON-RPC or gRPC
+\end{verbatim}
+
+\subsection{Final Remarks}
+This report has provided a comprehensive, theoretically grounded and practically oriented study of RPC. We have covered definitions, historical context, detailed component roles (stubs, serialisation, IDL), an exhaustive taxonomy of errors, a point-by-point comparison with REST, and an in-depth evaluation of three major RPC technologies (gRPC, JSON-RPC, XML-RPC) with references to others (Thrift, Cap’n Proto, SOAP). We have also answered the five analytical questions with depth and clarity.
+
+Understanding RPC is essential for any distributed systems engineer. This knowledge enables you to design resilient, high-performance, and maintainable services. The assignment’s practical part (building a multi-VM system with gRPC, HTTP file serving, and Pub/Sub alerts) complements this theoretical study, giving you hands-on experience with the concepts discussed.
+
+\section*{Glossary}
+\subsection*{Core RPC Terms}
+\begin{itemize}
+    \item \textbf{RPC (Remote Procedure Call)}: A protocol that allows a program to execute a procedure on a remote server as if it were a local function call. Hides network details.
+    \item \textbf{Client Stub}: A local proxy object generated from an IDL. It marshals parameters, sends the request, waits for the reply, and unmarshals the result.
+    \item \textbf{Server Stub (Skeleton)}: A generated dispatcher on the server side. It receives the request, unmarshals parameters, calls the actual implementation, and sends back the result.
+    \item \textbf{IDL (Interface Definition Language)}: A language-neutral specification of the service’s methods, parameters, and return types. Used to generate stubs.
+    \item \textbf{Marshaling (Serialization)}: Converting data structures into a byte stream suitable for network transmission.
+    \item \textbf{Unmarshaling (Deserialization)}: Reconstructing data structures from a byte stream.
+\end{itemize}
+
+\subsection*{RPC Technologies}
+\begin{itemize}
+    \item \textbf{gRPC}: High-performance RPC framework by Google. Uses Protocol Buffers and HTTP/2. Supports bidirectional streaming, deadlines, load balancing, and pluggable authentication.
+    \item \textbf{Protocol Buffers (Protobuf)}: Binary serialisation format with a schema (`.proto`). Compact, fast, and supports schema evolution.
+    \item \textbf{JSON-RPC}: Lightweight, text-based RPC using JSON. No mandatory IDL. Simple to implement and debug. Used in Bitcoin Core, Ethereum clients, and many internal tools.
+    \item \textbf{XML-RPC}: Legacy RPC using XML. Very verbose, but widely available in older systems. Now largely replaced by JSON-RPC.
+    \item \textbf{Apache Thrift}: RPC framework from Facebook. Supports multiple serialisation formats (binary, JSON, compact) and transports (TCP, HTTP). Generates stubs for many languages.
+    \item \textbf{SOAP}: XML-based enterprise RPC protocol. Heavyweight, supports WS-* standards (security, reliability). Still used in banking and government.
+    \item \textbf{Cap’n Proto}: Zero-copy serialisation and RPC. Data is directly usable from the wire - no encoding step. Extremely fast, but less adopted than gRPC.
+\end{itemize}
+
+\subsection*{Error and Reliability Concepts}
+\begin{itemize}
+    \item \textbf{Idempotent}: An operation that can be executed multiple times without changing the result beyond the first application. Examples: `GET /user/123`, `DELETE /item/456`. Non-idempotent: `POST /transfer`.
+    \item \textbf{Deadline (Timeout)}: The maximum time a client waits for an RPC response before giving up. Prevents indefinite hanging.
+    \item \textbf{Partial Failure}: A situation where the server executes the request but the client never receives the reply (e.g., network drop after reply). The client cannot distinguish this from the server crashing before execution.
+    \item \textbf{Exactly-once semantics}: The guarantee that an RPC is executed exactly one time, even in the presence of retries and failures. Extremely hard to achieve; usually requires idempotency keys or distributed transactions.
+    \item \textbf{At-most-once semantics}: The call is executed either zero or one time. Used by most RPC frameworks (e.g., gRPC default).
+    \item \textbf{At-least-once semantics}: The call may be executed one or more times. Suitable for idempotent operations.
+\end{itemize}
+
+\subsection*{Advanced Concepts}
+\begin{itemize}
+    \item \textbf{Streaming}: Continuous flow of messages between client and server. Can be client-side, server-side, or bidirectional (full duplex). Used in chat, live data feeds, file uploads.
+    \item \textbf{Load balancing}: Distributing RPC requests across multiple server instances to improve throughput and availability. gRPC supports client-side load balancing (round-robin, pick first) and integrates with service discovery (Consul, etcd, Kubernetes).
+    \item \textbf{Service discovery}: The mechanism by which a client finds the network address of a server (e.g., DNS, Consul, etcd).
+    \item \textbf{Distributed tracing}: Tracking a request as it propagates through multiple services. Uses correlation IDs and span contexts. OpenTelemetry is the standard.
+    \item \textbf{Schema evolution}: The ability to change a message definition (add, remove, or modify fields) without breaking existing clients. Protobuf and Avro support this; JSON-RPC does not.
+    \item \textbf{Interceptor (Middleware)}: A function that intercepts RPC calls on client or server side, allowing logging, authentication, metrics, retries, etc. gRPC provides interceptors.
+\end{itemize}
+
+\subsection*{Performance and Overhead}
+\begin{itemize}
+    \item \textbf{Binary vs Text formats}: Binary formats (Protobuf, MessagePack) produce smaller messages and parse faster, but are not human-readable. Text formats (JSON, XML) are larger and slower, but easier to debug.
+    \item \textbf{Multiplexing}: HTTP/2 allows multiple RPC calls to share a single TCP connection, reducing connection overhead. gRPC uses this extensively.
+    \item \textbf{Zero-copy}: A technique where data is sent from memory directly to the network without intermediate copies. Cap’n Proto achieves this by using a serialisation format that is also the in-memory representation.
+\end{itemize}
+
+\section*{References}
+\subsection*{Academic Papers}
+\begin{enumerate}
+    \item Birrell, A. D., \& Nelson, B. J. (1984). Implementing remote procedure calls. \textit{ACM Transactions on Computer Systems}, 2(1), 39-59.  
+    \textit{The original RPC paper; defines the core concepts of stubs, marshaling, and transparency.}
+    
+    \item Fielding, R. T. (2000). \textit{Architectural Styles and the Design of Network-based Software Architectures}. PhD thesis, University of California, Irvine.  
+    \textit{Defines REST; explains why RPC is not considered a uniform interface and contrasts with resource-oriented design.}
+    
+    \item Tanenbaum, A. S., \& Van Steen, M. (2017). \textit{Distributed Systems: Principles and Paradigms} (3rd ed.). Pearson.  
+    \textit{Chapter 4 (Communication) provides a comprehensive overview of RPC and its failure semantics.}
+\end{enumerate}
+
+\subsection*{Official Documentation and Specifications}
+\begin{enumerate}
+    \item gRPC Documentation. \url{https://grpc.io/docs/}  
+    \textit{Includes tutorials, API references, and best practices for gRPC in multiple languages.}
+    
+    \item Protocol Buffers Language Guide. \url{https://protobuf.dev/programming-guides/proto3/}  
+    \textit{Specification of `.proto` syntax, field numbers, schema evolution rules.}
+    
+    \item JSON-RPC Specification (Version 2.0). \url{https://www.jsonrpc.org/specification}  
+    \textit{Official specification, including request/response formats, error objects, batch calls, and notifications.}
+    
+    \item XML-RPC Specification. \url{https://xmlrpc.com/spec.md}  
+    \textit{Original specification, describing data types and the `<methodCall>` / `<methodResponse>` structure.}
+    
+    \item Apache Thrift Documentation. \url{https://thrift.apache.org/docs/}  
+    \textit{IDL reference, transport and protocol layers, and code generation.}
+    
+    \item Cap'n Proto RPC Specification. \url{https://capnproto.org/rpc.html}  
+    \textit{Explains zero-copy serialisation, promise pipelining, and the RPC protocol.}
+    
+    \item WSDL 1.1 - Web Services Description Language. W3C Note, 2001. \url{https://www.w3.org/TR/wsdl}  
+    \textit{Describes how SOAP services are defined; includes operations, messages, and bindings.}
+    
+    \item OpenTelemetry Documentation. \url{https://opentelemetry.io/docs/}  
+    \textit{Standard for distributed tracing and metrics; includes instrumentation for gRPC.}
+\end{enumerate}
+
+\subsection*{Online Resources and Tutorials}
+\begin{enumerate}
+    \item “gRPC vs REST: Understanding the Differences” - Cloudflare Blog. \url{https://www.cloudflare.com/learning/performance/grpc-vs-rest/}
+    
+    \item “RPC Idempotency: Why It Matters and How to Implement It” - Stripe Blog. \url{https://stripe.com/blog/idempotency}
+    
+    \item “Deadlines and Cancellation in gRPC” - gRPC official documentation.
+    
+    \item “Comparing Serialization Formats: Protobuf, JSON, MessagePack, and Avro” - Various benchmarks.
+\end{enumerate}
+
+\subsection*{Course Materials}
+\begin{enumerate}
+    \item Dr. Mohammadreza Shourniya, \textit{Fundamentals of Distributed Computing}, University of Tehran, Spring 2026. Course slides and lecture notes.
+    \item Assignment specification (provided by the course). Contains detailed requirements for the RPC study, multi-VM implementation, and Pub/Sub memory alerts.
+\end{enumerate}
+
+\subsection*{Software Tools Used in the Assignment}
+\begin{enumerate}
+    \item Go programming language (version 1.23+). \url{https://go.dev/}
+    \item gRPC for Go. \url{https://pkg.go.dev/google.golang.org/grpc}
+    \item Protocol Buffers compiler (`protoc`). \url{https://github.com/protocolbuffers/protobuf}
+    \item VirtualBox (for running VMs). \url{https://www.virtualbox.org/}
+    \item Ubuntu 22.04 LTS (guest OS).
+\end{enumerate}
+
+\end{document}

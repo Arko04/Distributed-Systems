@@ -1,0 +1,106 @@
+# Docker Compose configuration for the RPC distributed system.
+# Services: auth, file, broker, web, subscriber.
+# All communication uses Docker's internal network with static IPs.
+
+services:
+  # 1. Authentication Service (gRPC)
+  auth-vm:
+    build:
+      context: ./auth-vm
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "50051:50051"
+    environment:
+      - GO_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=:50051"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      rpc-network:
+        ipv4_address: 192.168.100.10
+
+  # 2. File Service (HTTP)
+  file-vm:
+    build:
+      context: ./file-vm
+      dockerfile: Dockerfile
+    container_name: file-service
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./file-vm/files:/app/files
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8081/files/sample.jpg"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      rpc-network:
+        ipv4_address: 192.168.100.11
+
+  # 3. Pub/Sub Broker (TCP)
+  broker-vm:
+    build:
+      context: ./pubsub
+      dockerfile: Dockerfile.broker
+    container_name: pubsub-broker
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9090"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      rpc-network:
+        ipv4_address: 192.168.100.12
+
+  # 4. Web Service (HTTP + gRPC client + Memory Monitor)
+  web-vm:
+    build: ./web-vm
+    container_name: web-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-vm
+      - file-vm
+      - broker-vm
+    command:
+      - "./web-server"
+      - "-auth=auth-vm:50051"
+      - "-file=http://host.docker.internal:8081"
+      - "-broker=broker-vm:9090"
+      - "-threshold=300"
+      - "-listen=:8080"
+    restart: unless-stopped
+    networks:
+      rpc-network:
+        ipv4_address: 192.168.100.13
+
+  # 5. Pub/Sub Subscriber (Alert consumer)
+  subscriber-vm:
+    build:
+      context: ./pubsub
+      dockerfile: Dockerfile.subscriber
+    container_name: pubsub-subscriber
+    depends_on:
+      - broker-vm
+    command: ["./subscriber", "-broker=broker-vm:9090"]
+    restart: unless-stopped
+    networks:
+      rpc-network:
+        ipv4_address: 192.168.100.14
+
+# Internal bridge network with a fixed subnet for static IPs
+networks:
+  rpc-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.100.0/24

@@ -1,0 +1,35 @@
+2026/07/24 11:08:04 ╔══════════════════════════════════════════════════════════════╗
+2026/07/24 11:08:04 ║  REPLICA SERVER                                             ║
+2026/07/24 11:08:04 ╠══════════════════════════════════════════════════════════════╣
+2026/07/24 11:08:04 ║  ID:              replica1                                   ║
+2026/07/24 11:08:04 ║  Address:         localhost:8001                             ║
+2026/07/24 11:08:04 ║  Consistency:     strong                                     ║
+2026/07/24 11:08:04 ║  Network Delay:   2000                                   ms ║
+2026/07/24 11:08:04 ║  Peers:           2 peers                                    ║
+2026/07/24 11:08:04 ║    Peer 1:         http://localhost:8002                  ║
+2026/07/24 11:08:04 ║    Peer 2:         http://localhost:8003                  ║
+2026/07/24 11:08:04 ╚══════════════════════════════════════════════════════════════╝
+2026/07/24 11:08:04 Server starting on localhost:8001...
+2026/07/24 11:08:13 [127.0.0.1:55415] GET /health - 233.167µs
+2026/07/24 11:08:13 [127.0.0.1:55416] GET /health - 655.667µs
+2026/07/24 11:08:16 [replica1] ✅ Majority ACK received from http://localhost:8003 (2/3)
+2026/07/24 11:08:16 [replica1] ✅ Majority ACK received from http://localhost:8002 (3/3)
+2026/07/24 11:08:16 [replica1] Strong replication result: 3/3 acknowledged (need 2) - SUCCESS ✅
+2026/07/24 11:08:16 [replica1] PUT x=10 (version 1, model: strong)
+2026/07/24 11:08:16 [127.0.0.1:55421] POST /put - 2.01901925s
+2026/07/24 11:08:16 [replica1] GET x -> 10 (version 1)
+2026/07/24 11:08:16 [127.0.0.1:55431] GET /get - 67.709µs
+2026/07/24 11:08:16 [replica1] GET x -> 10 (version 1)
+2026/07/24 11:08:16 [127.0.0.1:55434] GET /get - 59.542µs
+2026/07/24 11:08:19 [replica1] ✅ Majority ACK received from http://localhost:8003 (2/3)
+2026/07/24 11:08:19 [replica1] ✅ Majority ACK received from http://localhost:8002 (3/3)
+2026/07/24 11:08:19 [replica1] Strong replication result: 3/3 acknowledged (need 2) - SUCCESS ✅
+2026/07/24 11:08:19 [replica1] PUT w=500 (version 1, model: strong)
+2026/07/24 11:08:19 [127.0.0.1:55437] POST /put - 2.002373416s
+2026/07/24 11:08:19 [replica1] GET w -> 500 (version 1)
+2026/07/24 11:08:19 [127.0.0.1:55441] GET /get - 112.666µs
+2026/07/24 11:08:19 [replica1] GET w -> 500 (version 1)
+2026/07/24 11:08:19 [127.0.0.1:55444] GET /get - 61.25µs
+2026/07/24 11:08:19 [replica1] GET w -> 500 (version 1)
+2026/07/24 11:08:19 [127.0.0.1:55447] GET /get - 47.125µs
+signal: terminated

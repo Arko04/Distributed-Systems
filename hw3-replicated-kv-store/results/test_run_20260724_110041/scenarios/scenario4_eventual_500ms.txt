@@ -1,0 +1,103 @@
+================================================================================
+SCENARIO 4: NETWORK DELAY IMPACT ANALYSIS
+================================================================================
+
+CONFIGURATION:
+  Date:               Fri Jul 24 11:01:27 +0330 2026
+  Consistency Model:  eventual
+  Network Delay:      500ms
+  Test Run ID:        20260724_110041
+
+--------------------------------------------------------------------------------
+OBJECTIVE
+--------------------------------------------------------------------------------
+Measure how network delay affects convergence time and stale reads.
+Compare behavior between eventual and strong consistency.
+
+--------------------------------------------------------------------------------
+TEST EXECUTION
+--------------------------------------------------------------------------------
+
+=== Writing test value to Replica 1 ===
+PUT Latency: 50ms
+Response:
+{
+    "success": true,
+    "message": "Value stored successfully",
+    "version": 1,
+    "updated_by": "replica1"
+}
+[0;32m   📊  PUT Latency                    [1m50ms[0m
+
+=== Monitoring Convergence (polling every 0.25s) ===
+
+  t=0ms  : R1=500   R2=?     R3=?    
+  t=250ms: R1=500   R2=500   R3=500  
+
+Convergence Status: ✅ SUCCESS
+Convergence Time: 250ms
+Total Checks: 2
+Stale Reads: 1
+[0;32m   📊  Convergence Time               [1m250ms[0m
+[0;32m   📊  Total Checks                   [1m2[0m
+[0;32m   📊  Stale Reads                    [1m1[0m
+
+=== Final State ===
+Replica 1:
+{
+    "key": "w",
+    "value": "500",
+    "version": 1,
+    "updated_by": "replica1",
+    "timestamp": 1784878287180913000,
+    "found": true
+}
+
+Replica 2:
+{
+    "key": "w",
+    "value": "500",
+    "version": 1,
+    "updated_by": "replica1",
+    "timestamp": 1784878287180913000,
+    "found": true
+}
+
+Replica 3:
+{
+    "key": "w",
+    "value": "500",
+    "version": 1,
+    "updated_by": "replica1",
+    "timestamp": 1784878287180913000,
+    "found": true
+}
+
+
+--------------------------------------------------------------------------------
+ANALYSIS
+--------------------------------------------------------------------------------
+EVENTUAL CONSISTENCY with 500ms delay:
+
+Trade-offs observed:
+  ✅ Fast writes: PUT completed in 50ms
+  ❌ Stale reads: 1 stale reads during convergence
+  ⏱️  Convergence: 250ms
+
+Impact of delay:
+  - PUT latency remains LOW (write is local, replication is async)
+  - Convergence time INCREASES with delay
+  - Stale read probability INCREASES with delay
+  - System remains AVAILABLE (accepts writes)
+
+--------------------------------------------------------------------------------
+METRICS SUMMARY
+--------------------------------------------------------------------------------
+
+  PUT Latency:                        50ms
+  Convergence Time:                   250ms
+  Total Checks:                       2
+  Stale Reads:                        1
+  Consistency Model:                  eventual
+  Configured Delay:                   500ms
+

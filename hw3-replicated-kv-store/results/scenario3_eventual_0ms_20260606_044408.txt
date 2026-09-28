@@ -1,0 +1,81 @@
+================================================================================
+SCENARIO 3: CONCURRENT CONFLICT RESOLUTION
+================================================================================
+Date: Sat Jun  6 04:44:31 +0330 2026
+Consistency Model: eventual
+Network Delay: 0ms
+Conflict Resolution: Last-Write-Wins (LWW)
+
+--------------------------------------------------------------------------------
+STEPS
+--------------------------------------------------------------------------------
+
+--- Step 1: PUT z=100 to Replica 1 ---
+Timestamp: 1780708471880038000
+Response: {"success":true,"message":"Value stored successfully","version":1,"updated_by":"replica1"}
+
+--- Step 2: PUT z=200 to Replica 2 (concurrent) ---
+Timestamp: 1780708471950179000
+Response: {"success":true,"message":"Value stored successfully","version":2,"updated_by":"replica2"}
+
+--- Step 3: Waiting for replication and conflict resolution ---
+
+--- Step 4: Final state across all replicas ---
+
+Replica 1:
+{
+    "key": "z",
+    "value": "200",
+    "version": 2,
+    "updated_by": "replica2",
+    "timestamp": 1780708471963576000,
+    "found": true
+}
+
+Replica 2:
+{
+    "key": "z",
+    "value": "200",
+    "version": 2,
+    "updated_by": "replica2",
+    "timestamp": 1780708471963576000,
+    "found": true
+}
+
+Replica 3:
+{
+    "key": "z",
+    "value": "200",
+    "version": 2,
+    "updated_by": "replica2",
+    "timestamp": 1780708471963576000,
+    "found": true
+}
+
+--- Conflict Resolution Result ---
+WINNING VALUE: 200
+All replicas converged to the same value
+The SECOND write (z=200) won - higher timestamp (LWW)
+
+--------------------------------------------------------------------------------
+ANALYSIS
+--------------------------------------------------------------------------------
+Conflict Resolution Strategy: Last-Write-Wins (LWW)
+- When two updates have the same version, the higher timestamp wins
+- This is deterministic: all replicas will make the same choice
+- The 'losing' value is silently discarded
+- LWW is simple but can lead to data loss in some scenarios
+
+Timestamp comparison:
+  Write 1 (z=100): 1780708471880038000
+  Write 2 (z=200): 1780708471950179000
+  Write 2 has higher timestamp → should win
+
+--------------------------------------------------------------------------------
+METRICS SUMMARY
+--------------------------------------------------------------------------------
+Conflict Detected: Yes (same version, different values)
+Resolution: LWW (Last-Write-Wins)
+Winning Value: 200
+Converged: Yes
+

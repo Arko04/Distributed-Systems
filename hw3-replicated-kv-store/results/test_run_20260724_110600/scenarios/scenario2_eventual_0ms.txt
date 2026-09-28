@@ -1,0 +1,123 @@
+================================================================================
+SCENARIO 2: REPLICA FAILURE BEHAVIOR
+================================================================================
+
+CONFIGURATION:
+  Date:               Fri Jul 24 11:06:15 +0330 2026
+  Consistency Model:  eventual
+  Network Delay:      0ms
+  Test Run ID:        20260724_110600
+
+--------------------------------------------------------------------------------
+OBJECTIVE
+--------------------------------------------------------------------------------
+Test system behavior when a replica fails. Compare eventual vs strong consistency.
+
+--------------------------------------------------------------------------------
+TEST EXECUTION
+--------------------------------------------------------------------------------
+
+=== STEP 1: Stopping Replica 3 (Simulating Failure) ===
+Stop command result: {"message":"Replica replica3 has been stopped","status":"stopped"}
+Replica 3 status: stopped
+[0;32m   ✅  Replica 3 successfully stopped[0m
+
+Available replicas after failure:
+  Replica 1: healthy
+  Replica 2: healthy
+
+=== STEP 2: Writing y=20 to Replica 1 (with Replica 3 down) ===
+PUT Latency: 60ms
+Success: True
+Message: Value stored successfully
+Response:
+{
+    "success": true,
+    "message": "Value stored successfully",
+    "version": 1,
+    "updated_by": "replica1"
+}
+
+WRITE STATUS: ✅ SUCCESS
+  Eventual consistency accepted the write (prioritized availability)
+[0;32m   📊  PUT Latency                    [1m60ms[0m
+[0;32m   📊  PUT Success                    [1mTrue[0m
+
+=== STEP 3: Checking Data on Available Replicas ===
+
+--- Replica 1 ---
+Found: True
+Value: 20
+{
+    "key": "y",
+    "value": "20",
+    "version": 1,
+    "updated_by": "replica1",
+    "timestamp": 1784878577511156000,
+    "found": true
+}
+
+--- Replica 2 ---
+Found: True
+Value: 20
+{
+    "key": "y",
+    "value": "20",
+    "version": 1,
+    "updated_by": "replica1",
+    "timestamp": 1784878577511156000,
+    "found": true
+}
+
+=== STEP 4: Restarting Replica 3 ===
+Start command result: {"message":"Replica replica3 has been started","status":"started"}
+[0;32m   ✅  Replica 3 is back online[0m
+
+=== STEP 5: Checking Replica 3 After Restart ===
+Found: False
+Value: <not found>
+Full response:
+{
+    "key": "y",
+    "value": "",
+    "version": 0,
+    "updated_by": "",
+    "timestamp": 0,
+    "found": false
+}
+
+REPLICA 3 DATA: ❌ MISSING
+  Replica 3 missed the update while it was down
+  This demonstrates the need for catch-up mechanisms in real systems
+
+--------------------------------------------------------------------------------
+ANALYSIS
+--------------------------------------------------------------------------------
+EVENTUAL CONSISTENCY (AP System):
+
+Advantages:
+  ✅ System remained available for writes (2/3 nodes)
+  ✅ Fast write response (no waiting for failed node)
+  ✅ Remaining replicas stayed synchronized
+
+Disadvantages:
+  ❌ Failed replica missed updates (data loss risk)
+  ❌ No automatic catch-up when replica recovers
+  ❌ Requires additional mechanisms for full recovery
+
+Real-world solutions:
+  - Hinted Handoff: Another node saves updates for the failed node
+  - Read Repair: Detect and fix inconsistencies on read
+  - Anti-Entropy: Background process to sync all replicas
+
+--------------------------------------------------------------------------------
+METRICS SUMMARY
+--------------------------------------------------------------------------------
+
+  Replicas Available:                 2 of 3
+  PUT Success:                        True
+  PUT Latency:                        60ms
+  Replica 3 Data After Restart:       Missing
+  Consistency Model:                  eventual
+  Network Delay:                      0ms
+

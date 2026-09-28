@@ -1,0 +1,134 @@
+================================================================================
+COMPREHENSIVE TEST SUMMARY REPORT
+================================================================================
+
+Generated: Fri Jul 24 11:03:03 +0330 2026
+Test Run ID: 20260724_110041
+Base Directory: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes
+
+================================================================================
+EXECUTIVE SUMMARY
+================================================================================
+
+This report presents the results of automated testing of a distributed
+replicated key-value store under various consistency models and network
+conditions. Tests were conducted to demonstrate:
+
+  1. Temporary inconsistency in eventual consistency
+  2. System behavior during replica failures
+  3. Concurrent conflict resolution
+  4. Impact of network delay on convergence
+
+================================================================================
+TEST CONFIGURATIONS
+================================================================================
+
+Six configurations were tested:
+
+  Config 1: Eventual Consistency, 0ms delay
+  Config 2: Eventual Consistency, 500ms delay
+  Config 3: Eventual Consistency, 2000ms delay
+  Config 4: Strong Consistency, 0ms delay
+  Config 5: Strong Consistency, 500ms delay
+  Config 6: Strong Consistency, 2000ms delay
+
+================================================================================
+SCENARIO 1 RESULTS: TEMPORARY INCONSISTENCY
+================================================================================
+
+| Model        | Delay    | PUT Latency  | GET Latency     | Stale Read   | Convergence  |
+| ------------ | -------- | ------------ | --------------- | ------------ | ------------ |
+| eventual     | 0ms      | 55ms         | 67ms            | No           | [1;37m      |
+| eventual     | 500ms    | 48ms         | 64ms            | Yes          | [1;37m      |
+| eventual     | 2000ms   | 55ms         | 56ms            | Yes          | [1;37m      |
+| strong       | 0ms      | 54ms         | 51ms            | No           | [1;37m      |
+| strong       | 500ms    | 567ms        | 52ms            | No           | [1;37m      |
+| strong       | 2000ms   | 2068ms       | 52ms            | No           | [1;37m      |
+
+================================================================================
+SCENARIO 4 RESULTS: NETWORK DELAY IMPACT
+================================================================================
+
+| Model        | Delay    | PUT Latency  | Convergence Time  | Stale Reads  |
+| ------------ | -------- | ------------ | ----------------- | ------------ |
+| eventual     | 0ms      | 57ms         | 250ms             | 0            |
+| eventual     | 500ms    | 50ms         | 250ms             | 1            |
+| eventual     | 2000ms   | 42ms         | 1250ms            | 5            |
+| strong       | 0ms      | 50ms         | 250ms             | 0            |
+| strong       | 500ms    | 551ms        | 250ms             | 0            |
+| strong       | 2000ms   | 2075ms       | 250ms             | 0            |
+
+================================================================================
+KEY FINDINGS
+================================================================================
+
+1. CONSISTENCY vs AVAILABILITY (CAP Theorem):
+   - Eventual consistency (AP): Fast writes, allows stale reads
+   - Strong consistency (CP): No stale reads, slower writes
+   - Choice depends on application requirements
+
+2. NETWORK DELAY IMPACT:
+   - Eventual: Convergence time increases linearly with delay
+   - Strong: PUT latency increases linearly with delay
+   - Stale reads increase with delay in eventual consistency
+
+3. FAILURE HANDLING:
+   - Eventual: Continues operating, failed nodes miss updates
+   - Strong: May reject writes if majority unavailable
+   - Both need catch-up mechanisms for recovering nodes
+
+4. CONFLICT RESOLUTION:
+   - LWW is simple and deterministic
+   - Silently discards losing writes
+   - Not suitable for all data types
+
+================================================================================
+RECOMMENDATIONS
+================================================================================
+
+Choose consistency model based on requirements:
+
+  EVENTUAL CONSISTENCY (AP) when:
+    - Low latency is critical
+    - Temporary staleness is acceptable
+    - High availability is required
+    Examples: Social media feeds, DNS, CDN, caching
+
+  STRONG CONSISTENCY (CP) when:
+    - Data correctness is critical
+    - Stale reads are unacceptable
+    - Can tolerate higher latency
+    Examples: Banking, inventory, authentication
+
+================================================================================
+TEST RUN DETAILS
+================================================================================
+
+  Test Run ID:     20260724_110041
+  Completed at:    Fri Jul 24 11:03:03 +0330 2026
+  Results location: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041
+
+Files generated:
+total 176
+drwxr-xr-x@ 18 tahamajs  staff   576 Jul 24 11:02 .
+drwxr-xr-x@  7 tahamajs  staff   224 Jul 24 11:03 ..
+-rw-r--r--@  1 tahamajs  staff  4958 Jul 24 11:00 scenario1_eventual_0ms.txt
+-rw-r--r--@  1 tahamajs  staff  4971 Jul 24 11:01 scenario1_eventual_2000ms.txt
+-rw-r--r--@  1 tahamajs  staff  4965 Jul 24 11:01 scenario1_eventual_500ms.txt
+-rw-r--r--@  1 tahamajs  staff  4572 Jul 24 11:02 scenario1_strong_0ms.txt
+-rw-r--r--@  1 tahamajs  staff  4586 Jul 24 11:02 scenario1_strong_2000ms.txt
+-rw-r--r--@  1 tahamajs  staff  4580 Jul 24 11:02 scenario1_strong_500ms.txt
+-rw-r--r--@  1 tahamajs  staff  3719 Jul 24 11:01 scenario2_eventual_0ms.txt
+-rw-r--r--@  1 tahamajs  staff  3361 Jul 24 11:02 scenario2_strong_0ms.txt
+-rw-r--r--@  1 tahamajs  staff  4037 Jul 24 11:01 scenario3_eventual_0ms.txt
+-rw-r--r--@  1 tahamajs  staff  4033 Jul 24 11:02 scenario3_strong_0ms.txt
+-rw-r--r--@  1 tahamajs  staff  2984 Jul 24 11:01 scenario4_eventual_0ms.txt
+-rw-r--r--@  1 tahamajs  staff  3151 Jul 24 11:01 scenario4_eventual_2000ms.txt
+-rw-r--r--@  1 tahamajs  staff  2990 Jul 24 11:01 scenario4_eventual_500ms.txt
+-rw-r--r--@  1 tahamajs  staff  2955 Jul 24 11:02 scenario4_strong_0ms.txt
+-rw-r--r--@  1 tahamajs  staff  2972 Jul 24 11:02 scenario4_strong_2000ms.txt
+-rw-r--r--@  1 tahamajs  staff  2965 Jul 24 11:02 scenario4_strong_500ms.txt
+
+================================================================================
+END OF REPORT
+================================================================================

@@ -1,0 +1,43 @@
+================================================================================
+SCENARIO 4: NETWORK DELAY IMPACT
+================================================================================
+Date: Sat Jun  6 04:45:54 +0330 2026
+Consistency Model: strong
+Network Delay: 500ms
+
+--------------------------------------------------------------------------------
+TEST EXECUTION
+--------------------------------------------------------------------------------
+
+--- Writing w=500 to Replica 1 ---
+PUT Latency: 556ms
+Response: {"success":true,"message":"Value stored successfully","version":1,"updated_by":"replica1"}
+
+--- Monitoring convergence ---
+t=0ms: R1=500, R2=500, R3=500
+t=500ms: R1=500, R2=500, R3=500
+
+--- Final State ---
+Replica 1: {"key":"w","value":"500","version":1,"updated_by":"replica1","timestamp":1780708554302263000,"found":true}
+Replica 2: {"key":"w","value":"500","version":1,"updated_by":"replica1","timestamp":1780708554302263000,"found":true}
+Replica 3: {"key":"w","value":"500","version":1,"updated_by":"replica1","timestamp":1780708554302263000,"found":true}
+
+--------------------------------------------------------------------------------
+METRICS SUMMARY
+--------------------------------------------------------------------------------
+PUT Latency: 556ms
+Convergence Time: 500ms
+Total Checks: 2
+Stale Reads Observed: 0
+Model: strong
+Configured Delay: 500ms
+
+--------------------------------------------------------------------------------
+ANALYSIS
+--------------------------------------------------------------------------------
+Strong Consistency with 500ms delay:
+- PUT waits for majority acknowledgment
+- PUT latency increases with delay (~556ms)
+- No stale reads (consistency window = 0)
+- Higher delay = slower writes but consistent reads
+

@@ -1,0 +1,120 @@
+================================================================================
+SCENARIO 4: NETWORK DELAY IMPACT
+================================================================================
+
+Date: _______________
+Tester: _______________
+Consistency Model: Eventual (Part A) / Strong (Part B)
+
+================================================================================
+PART A: EVENTUAL CONSISTENCY WITH VARYING DELAYS
+================================================================================
+
+--------------------------------------------------------------------------------
+TEST A-1: 0ms NETWORK DELAY
+--------------------------------------------------------------------------------
+
+PUT Response Time: _______ ms
+Convergence Time: _______ ms
+
+Time Series:
+  t=0ms:    PUT to Replica 1
+  t=___ms:  Replica 2 has value
+  t=___ms:  Replica 3 has value
+  t=___ms:  All replicas converged
+
+Stale Reads During Convergence: _______
+
+--------------------------------------------------------------------------------
+TEST A-2: 500ms NETWORK DELAY
+--------------------------------------------------------------------------------
+
+PUT Response Time: _______ ms
+Convergence Time: _______ ms
+
+Time Series:
+  t=0ms:    PUT to Replica 1
+  t=___ms:  Replica 2 has value
+  t=___ms:  Replica 3 has value
+  t=___ms:  All replicas converged
+
+Stale Reads During Convergence: _______
+
+--------------------------------------------------------------------------------
+TEST A-3: 2000ms NETWORK DELAY
+--------------------------------------------------------------------------------
+
+PUT Response Time: _______ ms
+Convergence Time: _______ ms
+
+Time Series:
+  t=0ms:    PUT to Replica 1
+  t=___ms:  Replica 2 has value
+  t=___ms:  Replica 3 has value
+  t=___ms:  All replicas converged
+
+Stale Reads During Convergence: _______
+
+================================================================================
+PART B: STRONG CONSISTENCY WITH VARYING DELAYS
+================================================================================
+
+--------------------------------------------------------------------------------
+TEST B-1: 0ms NETWORK DELAY
+--------------------------------------------------------------------------------
+
+PUT Response Time: _______ ms
+Number of replicas updated immediately: _______
+
+--------------------------------------------------------------------------------
+TEST B-2: 500ms NETWORK DELAY
+--------------------------------------------------------------------------------
+
+PUT Response Time: _______ ms
+Number of replicas updated immediately: _______
+
+--------------------------------------------------------------------------------
+TEST B-3: 2000ms NETWORK DELAY
+--------------------------------------------------------------------------------
+
+PUT Response Time: _______ ms
+Number of replicas updated immediately: _______
+
+================================================================================
+SUMMARY TABLE
+================================================================================
+
+| Model    | Delay  | PUT Latency | Convergence Time | Stale Reads |
+|----------|--------|-------------|------------------|-------------|
+| Eventual | 0ms    | _______ ms  | _______ ms       | _______     |
+| Eventual | 500ms  | _______ ms  | _______ ms       | _______     |
+| Eventual | 2000ms | _______ ms  | _______ ms       | _______     |
+| Strong   | 0ms    | _______ ms  | 0ms (immediate)  | 0           |
+| Strong   | 500ms  | _______ ms  | 0ms (immediate)  | 0           |
+| Strong   | 2000ms | _______ ms  | 0ms (immediate)  | 0           |
+
+================================================================================
+ANALYSIS
+================================================================================
+
+1. How does network delay affect eventual consistency convergence time?
+   [Your analysis here]
+
+2. How does network delay affect strong consistency PUT latency?
+   [Your analysis here]
+
+3. At what delay does the system become unusable?
+   [Your analysis here]
+
+4. What real-world scenarios cause high network delays?
+   [Your analysis here]
+
+5. Which consistency model would you choose for:
+   a) A global social media platform? Why?
+   b) A banking transaction system? Why?
+   c) A real-time multiplayer game? Why?
+
+================================================================================
+CONCLUSION
+================================================================================
+[Summarize the trade-offs between latency, consistency, and availability]

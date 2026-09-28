@@ -1,0 +1,8 @@
+{
+  "id": "replica3",
+  "host": "localhost",
+  "port": 8003,
+  "peers": ["http://localhost:8001", "http://localhost:8002"],
+  "consistency_model": "strong",
+  "network_delay": 2000
+}

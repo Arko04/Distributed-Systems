@@ -1,0 +1,380 @@
+[2026-07-24 11:00:41.3N] [INFO] ULTRA-COMPLETE AUTOMATED DISTRIBUTED SYSTEM TEST SUITE v2.0
+[2026-07-24 11:00:41.3N] [INFO] Test Run ID: 20260724_110041
+[2026-07-24 11:00:41.3N] [INFO] Results will be saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041
+[2026-07-24 11:00:41.3N] [INFO] Log file: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/test_execution.log
+[2026-07-24 11:00:41.3N] [INFO] This will test 6 configurations across 4 scenarios
+[2026-07-24 11:00:41.3N] [INFO] Estimated time: 10-15 minutes
+[2026-07-24 11:00:41.3N] [INFO] SECTION: CLEANING UP PREVIOUS PROCESSES
+[2026-07-24 11:00:41.3N] [INFO] Stopping any running replica processes...
+[2026-07-24 11:00:44.3N] [INFO] Checking if ports are free...
+[2026-07-24 11:00:44.3N] [SUCCESS] Port 8001 is free
+[2026-07-24 11:00:44.3N] [SUCCESS] Port 8002 is free
+[2026-07-24 11:00:44.3N] [SUCCESS] Port 8003 is free
+[2026-07-24 11:00:45.3N] [INFO] TEST SET 1/6: EVENTUAL CONSISTENCY - 0ms DELAY
+[2026-07-24 11:00:45.3N] [INFO] SECTION: STARTING REPLICA SERVERS
+[2026-07-24 11:00:45.3N] [INFO] Consistency Model: eventual
+[2026-07-24 11:00:45.3N] [INFO] Network Delay: 0ms
+[2026-07-24 11:00:45.3N] [INFO] Resetting config files (model=eventual, delay=0ms)...
+[2026-07-24 11:00:45.3N] [SUCCESS] Config files updated
+[2026-07-24 11:00:45.3N] [INFO] Starting Replica 1 (port 8001)...
+[2026-07-24 11:00:48.3N] [INFO] Starting Replica 2 (port 8002)...
+[2026-07-24 11:00:51.3N] [INFO] Starting Replica 3 (port 8003)...
+[2026-07-24 11:00:54.3N] [INFO] Verifying replica health...
+[2026-07-24 11:00:54.3N] [INFO] Checking Replica 1...
+[2026-07-24 11:00:54.3N] [SUCCESS] Replica 1 (replica1): healthy
+[2026-07-24 11:00:54.3N] [INFO] Checking Replica 2...
+[2026-07-24 11:00:54.3N] [SUCCESS] Replica 1 (replica2): healthy
+[2026-07-24 11:00:54.3N] [INFO] Checking Replica 3...
+[2026-07-24 11:00:55.3N] [SUCCESS] Replica 1 (replica3): healthy
+[2026-07-24 11:00:55.3N] [SUCCESS] All replicas are healthy and ready!
+[2026-07-24 11:00:55.3N] [INFO] SCENARIO 1: TEMPORARY INCONSISTENCY OBSERVATION
+[2026-07-24 11:00:55.3N] [INFO] Consistency Model: eventual
+[2026-07-24 11:00:55.3N] [INFO] Network Delay: 0ms
+[2026-07-24 11:00:55.3N] [METRIC] PUT Latency = 55ms
+[2026-07-24 11:00:55.3N] [METRIC] GET Latency = 67ms
+[2026-07-24 11:00:55.3N] [METRIC] Stale Read Detected = No
+[2026-07-24 11:00:55.3N] [INFO] Waiting for all replicas to converge on key='x' value='10'...
+[2026-07-24 11:00:55.3N] [INFO] Timeout: 30s, Poll interval: 0.25s
+[2026-07-24 11:00:55.3N] [METRIC] Convergence Time = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+0s
+[2026-07-24 11:00:55.3N] [METRIC] Checks During Convergence = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+1
+[2026-07-24 11:00:55.3N] [METRIC] Stale Reads = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+0
+[2026-07-24 11:00:56.3N] [SUCCESS] Scenario 1 results saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/scenarios/scenario1_eventual_0ms.txt
+[2026-07-24 11:00:56.3N] [INFO] SCENARIO 2: REPLICA FAILURE BEHAVIOR
+[2026-07-24 11:00:56.3N] [INFO] Consistency Model: eventual
+[2026-07-24 11:00:56.3N] [INFO] Network Delay: 0ms
+[2026-07-24 11:00:58.3N] [SUCCESS] Replica 3 successfully stopped
+[2026-07-24 11:00:58.3N] [METRIC] PUT Latency = 44ms
+[2026-07-24 11:00:58.3N] [METRIC] PUT Success = True
+[2026-07-24 11:01:01.3N] [SUCCESS] Replica 3 is back online
+[2026-07-24 11:01:02.3N] [SUCCESS] Scenario 2 results saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/scenarios/scenario2_eventual_0ms.txt
+[2026-07-24 11:01:02.3N] [INFO] SCENARIO 3: CONCURRENT CONFLICT RESOLUTION
+[2026-07-24 11:01:02.3N] [INFO] Consistency Model: eventual
+[2026-07-24 11:01:02.3N] [INFO] Network Delay: 0ms
+[2026-07-24 11:01:08.3N] [SUCCESS] Scenario 3 results saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/scenarios/scenario3_eventual_0ms.txt
+[2026-07-24 11:01:08.3N] [INFO] SCENARIO 4: NETWORK DELAY IMPACT
+[2026-07-24 11:01:08.3N] [INFO] Consistency Model: eventual
+[2026-07-24 11:01:08.3N] [INFO] Network Delay: 0ms
+[2026-07-24 11:01:08.3N] [METRIC] PUT Latency = 57ms
+[2026-07-24 11:01:09.3N] [METRIC] Convergence Time = 250ms
+[2026-07-24 11:01:09.3N] [METRIC] Total Checks = 2
+[2026-07-24 11:01:09.3N] [METRIC] Stale Reads = 0
+[2026-07-24 11:01:09.3N] [SUCCESS] Scenario 4 results saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/scenarios/scenario4_eventual_0ms.txt
+[2026-07-24 11:01:09.3N] [INFO] SECTION: CLEANING UP PREVIOUS PROCESSES
+[2026-07-24 11:01:09.3N] [INFO] Stopping any running replica processes...
+[2026-07-24 11:01:09.3N] [INFO] Killing process PID=89807...
+[2026-07-24 11:01:09.3N] [INFO] Killing process PID=89836...
+[2026-07-24 11:01:09.3N] [INFO] Killing process PID=89831...
+[2026-07-24 11:01:09.3N] [INFO] Killing process PID=89802...
+[2026-07-24 11:01:09.3N] [INFO] Killing process PID=89757...
+[2026-07-24 11:01:09.3N] [INFO] Killing process PID=89752...
+[2026-07-24 11:01:14.3N] [INFO] Checking if ports are free...
+[2026-07-24 11:01:14.3N] [SUCCESS] Port 8001 is free
+[2026-07-24 11:01:14.3N] [SUCCESS] Port 8002 is free
+[2026-07-24 11:01:14.3N] [SUCCESS] Port 8003 is free
+[2026-07-24 11:01:15.3N] [INFO] TEST SET 2/6: EVENTUAL CONSISTENCY - 500ms DELAY
+[2026-07-24 11:01:15.3N] [INFO] SECTION: STARTING REPLICA SERVERS
+[2026-07-24 11:01:15.3N] [INFO] Consistency Model: eventual
+[2026-07-24 11:01:15.3N] [INFO] Network Delay: 500ms
+[2026-07-24 11:01:15.3N] [INFO] Resetting config files (model=eventual, delay=500ms)...
+[2026-07-24 11:01:15.3N] [SUCCESS] Config files updated
+[2026-07-24 11:01:15.3N] [INFO] Starting Replica 1 (port 8001)...
+[2026-07-24 11:01:18.3N] [INFO] Starting Replica 2 (port 8002)...
+[2026-07-24 11:01:21.3N] [INFO] Starting Replica 3 (port 8003)...
+[2026-07-24 11:01:24.3N] [INFO] Verifying replica health...
+[2026-07-24 11:01:24.3N] [INFO] Checking Replica 1...
+[2026-07-24 11:01:24.3N] [SUCCESS] Replica 1 (replica1): healthy
+[2026-07-24 11:01:24.3N] [INFO] Checking Replica 2...
+[2026-07-24 11:01:25.3N] [SUCCESS] Replica 1 (replica2): healthy
+[2026-07-24 11:01:25.3N] [INFO] Checking Replica 3...
+[2026-07-24 11:01:25.3N] [SUCCESS] Replica 1 (replica3): healthy
+[2026-07-24 11:01:25.3N] [SUCCESS] All replicas are healthy and ready!
+[2026-07-24 11:01:25.3N] [INFO] SCENARIO 1: TEMPORARY INCONSISTENCY OBSERVATION
+[2026-07-24 11:01:25.3N] [INFO] Consistency Model: eventual
+[2026-07-24 11:01:25.3N] [INFO] Network Delay: 500ms
+[2026-07-24 11:01:25.3N] [METRIC] PUT Latency = 48ms
+[2026-07-24 11:01:25.3N] [METRIC] GET Latency = 64ms
+[2026-07-24 11:01:25.3N] [METRIC] Stale Read Detected = Yes
+[2026-07-24 11:01:25.3N] [INFO] Waiting for all replicas to converge on key='x' value='10'...
+[2026-07-24 11:01:25.3N] [INFO] Timeout: 30s, Poll interval: 0.25s
+[2026-07-24 11:01:26.3N] [METRIC] Convergence Time = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+.25s
+[2026-07-24 11:01:26.3N] [METRIC] Checks During Convergence = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+2
+[2026-07-24 11:01:26.3N] [METRIC] Stale Reads = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+1
+[2026-07-24 11:01:27.3N] [SUCCESS] Scenario 1 results saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/scenarios/scenario1_eventual_500ms.txt
+[2026-07-24 11:01:27.3N] [INFO] SCENARIO 4: NETWORK DELAY IMPACT
+[2026-07-24 11:01:27.3N] [INFO] Consistency Model: eventual
+[2026-07-24 11:01:27.3N] [INFO] Network Delay: 500ms
+[2026-07-24 11:01:27.3N] [METRIC] PUT Latency = 50ms
+[2026-07-24 11:01:28.3N] [METRIC] Convergence Time = 250ms
+[2026-07-24 11:01:28.3N] [METRIC] Total Checks = 2
+[2026-07-24 11:01:28.3N] [METRIC] Stale Reads = 1
+[2026-07-24 11:01:28.3N] [SUCCESS] Scenario 4 results saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/scenarios/scenario4_eventual_500ms.txt
+[2026-07-24 11:01:28.3N] [INFO] SECTION: CLEANING UP PREVIOUS PROCESSES
+[2026-07-24 11:01:28.3N] [INFO] Stopping any running replica processes...
+[2026-07-24 11:01:28.3N] [INFO] Killing process PID=90913...
+[2026-07-24 11:01:28.3N] [INFO] Killing process PID=90908...
+[2026-07-24 11:01:28.3N] [INFO] Killing process PID=90858...
+[2026-07-24 11:01:28.3N] [INFO] Killing process PID=90853...
+[2026-07-24 11:01:28.3N] [INFO] Killing process PID=90828...
+[2026-07-24 11:01:29.3N] [INFO] Killing process PID=90822...
+[2026-07-24 11:01:33.3N] [INFO] Checking if ports are free...
+[2026-07-24 11:01:33.3N] [SUCCESS] Port 8001 is free
+[2026-07-24 11:01:33.3N] [SUCCESS] Port 8002 is free
+[2026-07-24 11:01:33.3N] [SUCCESS] Port 8003 is free
+[2026-07-24 11:01:34.3N] [INFO] TEST SET 3/6: EVENTUAL CONSISTENCY - 2000ms DELAY
+[2026-07-24 11:01:34.3N] [INFO] SECTION: STARTING REPLICA SERVERS
+[2026-07-24 11:01:34.3N] [INFO] Consistency Model: eventual
+[2026-07-24 11:01:34.3N] [INFO] Network Delay: 2000ms
+[2026-07-24 11:01:34.3N] [INFO] Resetting config files (model=eventual, delay=2000ms)...
+[2026-07-24 11:01:34.3N] [SUCCESS] Config files updated
+[2026-07-24 11:01:34.3N] [INFO] Starting Replica 1 (port 8001)...
+[2026-07-24 11:01:37.3N] [INFO] Starting Replica 2 (port 8002)...
+[2026-07-24 11:01:40.3N] [INFO] Starting Replica 3 (port 8003)...
+[2026-07-24 11:01:43.3N] [INFO] Verifying replica health...
+[2026-07-24 11:01:43.3N] [INFO] Checking Replica 1...
+[2026-07-24 11:01:43.3N] [SUCCESS] Replica 1 (replica1): healthy
+[2026-07-24 11:01:43.3N] [INFO] Checking Replica 2...
+[2026-07-24 11:01:43.3N] [SUCCESS] Replica 1 (replica2): healthy
+[2026-07-24 11:01:43.3N] [INFO] Checking Replica 3...
+[2026-07-24 11:01:43.3N] [SUCCESS] Replica 1 (replica3): healthy
+[2026-07-24 11:01:43.3N] [SUCCESS] All replicas are healthy and ready!
+[2026-07-24 11:01:43.3N] [INFO] SCENARIO 1: TEMPORARY INCONSISTENCY OBSERVATION
+[2026-07-24 11:01:43.3N] [INFO] Consistency Model: eventual
+[2026-07-24 11:01:43.3N] [INFO] Network Delay: 2000ms
+[2026-07-24 11:01:44.3N] [METRIC] PUT Latency = 55ms
+[2026-07-24 11:01:44.3N] [METRIC] GET Latency = 56ms
+[2026-07-24 11:01:44.3N] [METRIC] Stale Read Detected = Yes
+[2026-07-24 11:01:44.3N] [INFO] Waiting for all replicas to converge on key='x' value='10'...
+[2026-07-24 11:01:44.3N] [INFO] Timeout: 30s, Poll interval: 0.25s
+[2026-07-24 11:01:46.3N] [METRIC] Convergence Time = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+1.00s
+[2026-07-24 11:01:46.3N] [METRIC] Checks During Convergence = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+5
+[2026-07-24 11:01:46.3N] [METRIC] Stale Reads = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+4
+[2026-07-24 11:01:47.3N] [SUCCESS] Scenario 1 results saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/scenarios/scenario1_eventual_2000ms.txt
+[2026-07-24 11:01:47.3N] [INFO] SCENARIO 4: NETWORK DELAY IMPACT
+[2026-07-24 11:01:47.3N] [INFO] Consistency Model: eventual
+[2026-07-24 11:01:47.3N] [INFO] Network Delay: 2000ms
+[2026-07-24 11:01:47.3N] [METRIC] PUT Latency = 42ms
+[2026-07-24 11:01:49.3N] [METRIC] Convergence Time = 1250ms
+[2026-07-24 11:01:49.3N] [METRIC] Total Checks = 6
+[2026-07-24 11:01:49.3N] [METRIC] Stale Reads = 5
+[2026-07-24 11:01:49.3N] [SUCCESS] Scenario 4 results saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/scenarios/scenario4_eventual_2000ms.txt
+[2026-07-24 11:01:49.3N] [INFO] SECTION: CLEANING UP PREVIOUS PROCESSES
+[2026-07-24 11:01:49.3N] [INFO] Stopping any running replica processes...
+[2026-07-24 11:01:49.3N] [INFO] Killing process PID=91930...
+[2026-07-24 11:01:49.3N] [INFO] Killing process PID=91684...
+[2026-07-24 11:01:49.3N] [INFO] Killing process PID=91679...
+[2026-07-24 11:01:49.3N] [INFO] Killing process PID=91658...
+[2026-07-24 11:01:49.3N] [INFO] Killing process PID=91652...
+[2026-07-24 11:01:49.3N] [INFO] Killing process PID=91608...
+[2026-07-24 11:01:49.3N] [INFO] Killing process PID=91603...
+[2026-07-24 11:01:53.3N] [INFO] Checking if ports are free...
+[2026-07-24 11:01:53.3N] [SUCCESS] Port 8001 is free
+[2026-07-24 11:01:54.3N] [SUCCESS] Port 8002 is free
+[2026-07-24 11:01:54.3N] [SUCCESS] Port 8003 is free
+[2026-07-24 11:01:55.3N] [INFO] TEST SET 4/6: STRONG CONSISTENCY - 0ms DELAY
+[2026-07-24 11:01:55.3N] [INFO] SECTION: STARTING REPLICA SERVERS
+[2026-07-24 11:01:55.3N] [INFO] Consistency Model: strong
+[2026-07-24 11:01:55.3N] [INFO] Network Delay: 0ms
+[2026-07-24 11:01:55.3N] [INFO] Resetting config files (model=strong, delay=0ms)...
+[2026-07-24 11:01:55.3N] [SUCCESS] Config files updated
+[2026-07-24 11:01:55.3N] [INFO] Starting Replica 1 (port 8001)...
+[2026-07-24 11:01:58.3N] [INFO] Starting Replica 2 (port 8002)...
+[2026-07-24 11:02:01.3N] [INFO] Starting Replica 3 (port 8003)...
+[2026-07-24 11:02:04.3N] [INFO] Verifying replica health...
+[2026-07-24 11:02:04.3N] [INFO] Checking Replica 1...
+[2026-07-24 11:02:04.3N] [SUCCESS] Replica 1 (replica1): healthy
+[2026-07-24 11:02:04.3N] [INFO] Checking Replica 2...
+[2026-07-24 11:02:04.3N] [SUCCESS] Replica 1 (replica2): healthy
+[2026-07-24 11:02:04.3N] [INFO] Checking Replica 3...
+[2026-07-24 11:02:04.3N] [SUCCESS] Replica 1 (replica3): healthy
+[2026-07-24 11:02:04.3N] [SUCCESS] All replicas are healthy and ready!
+[2026-07-24 11:02:04.3N] [INFO] SCENARIO 1: TEMPORARY INCONSISTENCY OBSERVATION
+[2026-07-24 11:02:04.3N] [INFO] Consistency Model: strong
+[2026-07-24 11:02:04.3N] [INFO] Network Delay: 0ms
+[2026-07-24 11:02:04.3N] [METRIC] PUT Latency = 54ms
+[2026-07-24 11:02:05.3N] [METRIC] GET Latency = 51ms
+[2026-07-24 11:02:05.3N] [METRIC] Stale Read Detected = No
+[2026-07-24 11:02:05.3N] [INFO] Waiting for all replicas to converge on key='x' value='10'...
+[2026-07-24 11:02:05.3N] [INFO] Timeout: 30s, Poll interval: 0.25s
+[2026-07-24 11:02:05.3N] [METRIC] Convergence Time = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+0s
+[2026-07-24 11:02:05.3N] [METRIC] Checks During Convergence = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+1
+[2026-07-24 11:02:05.3N] [METRIC] Stale Reads = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+0
+[2026-07-24 11:02:05.3N] [SUCCESS] Scenario 1 results saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/scenarios/scenario1_strong_0ms.txt
+[2026-07-24 11:02:05.3N] [INFO] SCENARIO 2: REPLICA FAILURE BEHAVIOR
+[2026-07-24 11:02:05.3N] [INFO] Consistency Model: strong
+[2026-07-24 11:02:05.3N] [INFO] Network Delay: 0ms
+[2026-07-24 11:02:07.3N] [SUCCESS] Replica 3 successfully stopped
+[2026-07-24 11:02:08.3N] [METRIC] PUT Latency = 48ms
+[2026-07-24 11:02:08.3N] [METRIC] PUT Success = True
+[2026-07-24 11:02:11.3N] [SUCCESS] Replica 3 is back online
+[2026-07-24 11:02:11.3N] [SUCCESS] Scenario 2 results saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/scenarios/scenario2_strong_0ms.txt
+[2026-07-24 11:02:11.3N] [INFO] SCENARIO 3: CONCURRENT CONFLICT RESOLUTION
+[2026-07-24 11:02:11.3N] [INFO] Consistency Model: strong
+[2026-07-24 11:02:11.3N] [INFO] Network Delay: 0ms
+[2026-07-24 11:02:17.3N] [SUCCESS] Scenario 3 results saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/scenarios/scenario3_strong_0ms.txt
+[2026-07-24 11:02:17.3N] [INFO] SCENARIO 4: NETWORK DELAY IMPACT
+[2026-07-24 11:02:17.3N] [INFO] Consistency Model: strong
+[2026-07-24 11:02:17.3N] [INFO] Network Delay: 0ms
+[2026-07-24 11:02:17.3N] [METRIC] PUT Latency = 50ms
+[2026-07-24 11:02:18.3N] [METRIC] Convergence Time = 250ms
+[2026-07-24 11:02:18.3N] [METRIC] Total Checks = 2
+[2026-07-24 11:02:18.3N] [METRIC] Stale Reads = 0
+[2026-07-24 11:02:18.3N] [SUCCESS] Scenario 4 results saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/scenarios/scenario4_strong_0ms.txt
+[2026-07-24 11:02:18.3N] [INFO] SECTION: CLEANING UP PREVIOUS PROCESSES
+[2026-07-24 11:02:18.3N] [INFO] Stopping any running replica processes...
+[2026-07-24 11:02:18.3N] [INFO] Killing process PID=92707...
+[2026-07-24 11:02:18.3N] [INFO] Killing process PID=92702...
+[2026-07-24 11:02:18.3N] [INFO] Killing process PID=92680...
+[2026-07-24 11:02:18.3N] [INFO] Killing process PID=92675...
+[2026-07-24 11:02:18.3N] [INFO] Killing process PID=92634...
+[2026-07-24 11:02:18.3N] [INFO] Killing process PID=92629...
+[2026-07-24 11:02:22.3N] [INFO] Checking if ports are free...
+[2026-07-24 11:02:22.3N] [SUCCESS] Port 8001 is free
+[2026-07-24 11:02:22.3N] [SUCCESS] Port 8002 is free
+[2026-07-24 11:02:22.3N] [SUCCESS] Port 8003 is free
+[2026-07-24 11:02:23.3N] [INFO] TEST SET 5/6: STRONG CONSISTENCY - 500ms DELAY
+[2026-07-24 11:02:23.3N] [INFO] SECTION: STARTING REPLICA SERVERS
+[2026-07-24 11:02:23.3N] [INFO] Consistency Model: strong
+[2026-07-24 11:02:23.3N] [INFO] Network Delay: 500ms
+[2026-07-24 11:02:23.3N] [INFO] Resetting config files (model=strong, delay=500ms)...
+[2026-07-24 11:02:23.3N] [SUCCESS] Config files updated
+[2026-07-24 11:02:24.3N] [INFO] Starting Replica 1 (port 8001)...
+[2026-07-24 11:02:27.3N] [INFO] Starting Replica 2 (port 8002)...
+[2026-07-24 11:02:30.3N] [INFO] Starting Replica 3 (port 8003)...
+[2026-07-24 11:02:33.3N] [INFO] Verifying replica health...
+[2026-07-24 11:02:33.3N] [INFO] Checking Replica 1...
+[2026-07-24 11:02:33.3N] [SUCCESS] Replica 1 (replica1): healthy
+[2026-07-24 11:02:33.3N] [INFO] Checking Replica 2...
+[2026-07-24 11:02:33.3N] [SUCCESS] Replica 1 (replica2): healthy
+[2026-07-24 11:02:33.3N] [INFO] Checking Replica 3...
+[2026-07-24 11:02:33.3N] [SUCCESS] Replica 1 (replica3): healthy
+[2026-07-24 11:02:33.3N] [SUCCESS] All replicas are healthy and ready!
+[2026-07-24 11:02:33.3N] [INFO] SCENARIO 1: TEMPORARY INCONSISTENCY OBSERVATION
+[2026-07-24 11:02:33.3N] [INFO] Consistency Model: strong
+[2026-07-24 11:02:33.3N] [INFO] Network Delay: 500ms
+[2026-07-24 11:02:34.3N] [METRIC] PUT Latency = 567ms
+[2026-07-24 11:02:34.3N] [METRIC] GET Latency = 52ms
+[2026-07-24 11:02:34.3N] [METRIC] Stale Read Detected = No
+[2026-07-24 11:02:34.3N] [INFO] Waiting for all replicas to converge on key='x' value='10'...
+[2026-07-24 11:02:34.3N] [INFO] Timeout: 30s, Poll interval: 0.25s
+[2026-07-24 11:02:34.3N] [METRIC] Convergence Time = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+0s
+[2026-07-24 11:02:34.3N] [METRIC] Checks During Convergence = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+1
+[2026-07-24 11:02:34.3N] [METRIC] Stale Reads = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+0
+[2026-07-24 11:02:35.3N] [SUCCESS] Scenario 1 results saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/scenarios/scenario1_strong_500ms.txt
+[2026-07-24 11:02:35.3N] [INFO] SCENARIO 4: NETWORK DELAY IMPACT
+[2026-07-24 11:02:35.3N] [INFO] Consistency Model: strong
+[2026-07-24 11:02:35.3N] [INFO] Network Delay: 500ms
+[2026-07-24 11:02:35.3N] [METRIC] PUT Latency = 551ms
+[2026-07-24 11:02:36.3N] [METRIC] Convergence Time = 250ms
+[2026-07-24 11:02:36.3N] [METRIC] Total Checks = 2
+[2026-07-24 11:02:36.3N] [METRIC] Stale Reads = 0
+[2026-07-24 11:02:36.3N] [SUCCESS] Scenario 4 results saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/scenarios/scenario4_strong_500ms.txt
+[2026-07-24 11:02:36.3N] [INFO] SECTION: CLEANING UP PREVIOUS PROCESSES
+[2026-07-24 11:02:36.3N] [INFO] Stopping any running replica processes...
+[2026-07-24 11:02:36.3N] [INFO] Killing process PID=93684...
+[2026-07-24 11:02:36.3N] [INFO] Killing process PID=93679...
+[2026-07-24 11:02:36.3N] [INFO] Killing process PID=93658...
+[2026-07-24 11:02:36.3N] [INFO] Killing process PID=93653...
+[2026-07-24 11:02:36.3N] [INFO] Killing process PID=93610...
+[2026-07-24 11:02:36.3N] [INFO] Killing process PID=93587...
+[2026-07-24 11:02:40.3N] [INFO] Checking if ports are free...
+[2026-07-24 11:02:40.3N] [SUCCESS] Port 8001 is free
+[2026-07-24 11:02:41.3N] [SUCCESS] Port 8002 is free
+[2026-07-24 11:02:41.3N] [SUCCESS] Port 8003 is free
+[2026-07-24 11:02:42.3N] [INFO] TEST SET 6/6: STRONG CONSISTENCY - 2000ms DELAY
+[2026-07-24 11:02:42.3N] [INFO] SECTION: STARTING REPLICA SERVERS
+[2026-07-24 11:02:42.3N] [INFO] Consistency Model: strong
+[2026-07-24 11:02:42.3N] [INFO] Network Delay: 2000ms
+[2026-07-24 11:02:42.3N] [INFO] Resetting config files (model=strong, delay=2000ms)...
+[2026-07-24 11:02:42.3N] [SUCCESS] Config files updated
+[2026-07-24 11:02:42.3N] [INFO] Starting Replica 1 (port 8001)...
+[2026-07-24 11:02:45.3N] [INFO] Starting Replica 2 (port 8002)...
+[2026-07-24 11:02:48.3N] [INFO] Starting Replica 3 (port 8003)...
+[2026-07-24 11:02:51.3N] [INFO] Verifying replica health...
+[2026-07-24 11:02:51.3N] [INFO] Checking Replica 1...
+[2026-07-24 11:02:51.3N] [SUCCESS] Replica 1 (replica1): healthy
+[2026-07-24 11:02:51.3N] [INFO] Checking Replica 2...
+[2026-07-24 11:02:51.3N] [SUCCESS] Replica 1 (replica2): healthy
+[2026-07-24 11:02:51.3N] [INFO] Checking Replica 3...
+[2026-07-24 11:02:51.3N] [SUCCESS] Replica 1 (replica3): healthy
+[2026-07-24 11:02:51.3N] [SUCCESS] All replicas are healthy and ready!
+[2026-07-24 11:02:51.3N] [INFO] SCENARIO 1: TEMPORARY INCONSISTENCY OBSERVATION
+[2026-07-24 11:02:51.3N] [INFO] Consistency Model: strong
+[2026-07-24 11:02:51.3N] [INFO] Network Delay: 2000ms
+[2026-07-24 11:02:53.3N] [METRIC] PUT Latency = 2068ms
+[2026-07-24 11:02:54.3N] [METRIC] GET Latency = 52ms
+[2026-07-24 11:02:54.3N] [METRIC] Stale Read Detected = No
+[2026-07-24 11:02:54.3N] [INFO] Waiting for all replicas to converge on key='x' value='10'...
+[2026-07-24 11:02:54.3N] [INFO] Timeout: 30s, Poll interval: 0.25s
+[2026-07-24 11:02:54.3N] [METRIC] Convergence Time = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+0s
+[2026-07-24 11:02:54.3N] [METRIC] Checks During Convergence = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+1
+[2026-07-24 11:02:54.3N] [METRIC] Stale Reads = [1;37m   📝  Waiting for all replicas to converge on key='x' value='10'...[0m
+[1;37m   📝  Timeout: 30s, Poll interval: 0.25s[0m
+0
+[2026-07-24 11:02:54.3N] [SUCCESS] Scenario 1 results saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/scenarios/scenario1_strong_2000ms.txt
+[2026-07-24 11:02:54.3N] [INFO] SCENARIO 4: NETWORK DELAY IMPACT
+[2026-07-24 11:02:54.3N] [INFO] Consistency Model: strong
+[2026-07-24 11:02:54.3N] [INFO] Network Delay: 2000ms
+[2026-07-24 11:02:56.3N] [METRIC] PUT Latency = 2075ms
+[2026-07-24 11:02:57.3N] [METRIC] Convergence Time = 250ms
+[2026-07-24 11:02:57.3N] [METRIC] Total Checks = 2
+[2026-07-24 11:02:57.3N] [METRIC] Stale Reads = 0
+[2026-07-24 11:02:57.3N] [SUCCESS] Scenario 4 results saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/scenarios/scenario4_strong_2000ms.txt
+[2026-07-24 11:02:57.3N] [INFO] SECTION: CLEANING UP PREVIOUS PROCESSES
+[2026-07-24 11:02:57.3N] [INFO] Stopping any running replica processes...
+[2026-07-24 11:02:57.3N] [INFO] Killing process PID=94319...
+[2026-07-24 11:02:57.3N] [INFO] Killing process PID=94314...
+[2026-07-24 11:02:57.3N] [INFO] Killing process PID=94293...
+[2026-07-24 11:02:57.3N] [INFO] Killing process PID=94288...
+[2026-07-24 11:02:57.3N] [INFO] Killing process PID=94248...
+[2026-07-24 11:02:57.3N] [INFO] Killing process PID=94243...
+[2026-07-24 11:03:01.3N] [INFO] Checking if ports are free...
+[2026-07-24 11:03:02.3N] [SUCCESS] Port 8001 is free
+[2026-07-24 11:03:02.3N] [SUCCESS] Port 8002 is free
+[2026-07-24 11:03:02.3N] [SUCCESS] Port 8003 is free
+[2026-07-24 11:03:03.3N] [INFO] GENERATING COMPREHENSIVE SUMMARY REPORT
+[2026-07-24 11:03:03.3N] [SUCCESS] Summary report saved to: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/SUMMARY_REPORT.txt
+[2026-07-24 11:03:03.3N] [INFO] SECTION: CLEANING UP PREVIOUS PROCESSES
+[2026-07-24 11:03:03.3N] [INFO] Stopping any running replica processes...
+[2026-07-24 11:03:05.3N] [INFO] Checking if ports are free...
+[2026-07-24 11:03:05.3N] [SUCCESS] Port 8001 is free
+[2026-07-24 11:03:05.3N] [SUCCESS] Port 8002 is free
+[2026-07-24 11:03:05.3N] [SUCCESS] Port 8003 is free
+[2026-07-24 11:03:06.3N] [INFO] ✅ TEST SUITE COMPLETE! ✅
+[2026-07-24 11:03:06.3N] [SUCCESS] All 6 configurations tested across 4 scenarios
+[2026-07-24 11:03:06.3N] [SUCCESS] Total test runs: 18
+[2026-07-24 11:03:06.3N] [INFO] Results saved in: /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041
+[2026-07-24 11:03:06.3N] [INFO] Open the summary: cat /Users/tahamajs/Documents/uni/DIST/CAs/CA3/codes/results/test_run_20260724_110041/SUMMARY_REPORT.txt
